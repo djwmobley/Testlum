@@ -2,7 +2,7 @@
 Starts the Testlum MCP server for one client session and removes it when the session ends.
 Point the MCP client config at this script. Never leave the container running.
 
-  Start-TestlumMcp.ps1 [-TestsDir <folder>]   TestsDir is mounted at /work in the container (default: current folder)
+  Start-TestlumMcp.ps1 [-TestsDir <folder>]   TestsDir is optional and defaults to the current folder, which is where the MCP client starts it; it is mounted at /work in the container
   Start-TestlumMcp.ps1 -Cleanup               remove any leftover testlum-mcp containers
 
 Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.1.0), TESTLUM_PASS_ENV (comma list of env var names to

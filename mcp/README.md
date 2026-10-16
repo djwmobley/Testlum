@@ -23,14 +23,20 @@ The client config points at a launcher, not at a running container. The launcher
 
 Without a usable Docker (the D-119 build container has no socket) the same launcher runs the jar as a plain stdio process that ends with the session.
 
-- Windows: `launch/Start-TestlumMcp.ps1 [-TestsDir <folder>]`, cleanup with `-Cleanup`.
-- macOS and the container: `launch/start-testlum-mcp.sh [tests-dir]`, cleanup with `--cleanup`.
+- Windows: `launch/Start-TestlumMcp.ps1 [-TestsDir <folder>]` (default: current folder), cleanup with `-Cleanup`.
+- macOS and the container: `launch/start-testlum-mcp.sh [tests-dir]` (default: current folder), cleanup with `--cleanup`.
 
 Inside the container the tests folder is mounted at `/work`, so tool arguments use `/work/...` paths. The launchers forward only the env var names listed in `TESTLUM_PASS_ENV` (for example `QBO_ACCESS_TOKEN`); no value is ever written to a script.
 
-MCP client config (Windows example):
+The tests folder is optional. With no argument the launchers use the folder the MCP client starts them in, so one global registration serves every project: whichever project you open is the folder mounted at `/work`. Pass `-TestsDir` (ps1) or a first argument (sh) only to pin a different folder.
 
-    { "command": "pwsh", "args": ["-NoProfile", "-File", "C:\\path\\to\\mcp\\launch\\Start-TestlumMcp.ps1", "-TestsDir", "C:\\path\\to\\tests"] }
+MCP client config, registered once for all projects (Windows example):
+
+    { "command": "pwsh", "args": ["-NoProfile", "-File", "C:\\path\\to\\mcp\\launch\\Start-TestlumMcp.ps1"] }
+
+macOS or the container:
+
+    { "command": "/path/to/mcp/launch/start-testlum-mcp.sh" }
 
 ## Reaching a stub or API on the host
 
