@@ -171,9 +171,16 @@ final class Runner {
         }
         if (r.exit() != 0 || junit == null || gateFailed) {
             sb.append("--- last ").append(r.tail().size()).append(" console lines ---\n");
-            r.tail().forEach(l -> sb.append(l).append('\n'));
+            r.tail().forEach(l -> sb.append(stripAnsi(l)).append('\n'));
         }
         return sb.toString().stripTrailing();
+    }
+
+    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\u001B\\[[0-9;?]*[ -/]*[@-~]");
+
+    /** Removes terminal color and cursor codes from console lines. */
+    static String stripAnsi(final String line) {
+        return ANSI.matcher(line).replaceAll("");
     }
 
     private static String cap(final String s) {

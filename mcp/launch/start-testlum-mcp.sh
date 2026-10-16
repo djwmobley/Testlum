@@ -43,7 +43,7 @@ if docker_ready; then
     say "image $image not found, building it"
     docker build -t "$image" "$here/.." >&2 || { say "build failed"; exit 1; }
   fi
-  set -- --rm -i --name "testlum-mcp-$$" --label app=testlum-mcp --memory 2g --cpus 2 \
+  set -- --rm -i --name "testlum-mcp-$$" --label app=testlum-mcp --memory 2g --cpus 2 --add-host=host.docker.internal:host-gateway \
     -e TESTLUM_MCP_IDLE_SECONDS="${TESTLUM_MCP_IDLE_SECONDS:-900}" -v "$tests:/work"
   if [ -n "${TESTLUM_ENGINE_JAR_HOST:-}" ]; then
     set -- "$@" -v "$TESTLUM_ENGINE_JAR_HOST:/testlum/testlum-final.jar:ro"

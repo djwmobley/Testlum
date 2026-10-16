@@ -9,7 +9,7 @@ An MCP server that helps agents write valid Testlum tests. It reads the engine's
 | `testlum_check` | Validates a tests folder without running it: XSD check of the global config, each `integration.xml` and each `scenario.xml`, folder layout, expected files exist, include targets exist and carry the `include` tag, http aliases exist, `active="false"` and `onlyThis="true"` flagged. Optional `requireTags` and `tagPattern`. |
 | `testlum_run` | Runs the engine headless and returns the exit code with its meaning, per-scenario pass or fail with the full failure text, and an optional scenario-count gate (`expectedScenarios`). Run only some scenarios with `tags`. |
 
-Per-scenario results need the JUnit output of the fork (branch `junit-report`). With the stock engine you get the exit code and the console tail.
+Per-scenario results need the JUnit output of the fork (branch `junit-report`), which the Docker image carries. With the stock engine you get the exit code and the console tail. Console lines are returned with color codes removed.
 
 ## Where schemas and the engine come from
 
@@ -32,6 +32,10 @@ MCP client config (Windows example):
 
     { "command": "pwsh", "args": ["-NoProfile", "-File", "C:\\path\\to\\mcp\\launch\\Start-TestlumMcp.ps1", "-TestsDir", "C:\\path\\to\\tests"] }
 
+## Reaching a stub or API on the host
+
+Inside the container `127.0.0.1` is the container itself. A stub running on the host must bind `0.0.0.0` (not `127.0.0.1`) and the tests must reach it at `host.docker.internal` (for example `apiUrl` `http://host.docker.internal:8080`). The launchers add `--add-host=host.docker.internal:host-gateway`, so the name also works on Linux. The plain-process path (no Docker) uses `127.0.0.1` as usual.
+
 ## Build
 
     docker build -t testlum-mcp:0.1.0 mcp/          # image on the pinned engine image
@@ -39,7 +43,7 @@ MCP client config (Windows example):
 
 Baked into the agent image instead of Docker: copy `testlum-mcp.jar` to `/opt/testlum-mcp/` and set `TESTLUM_ENGINE_JAR`; the shell launcher finds the jar there.
 
-To use the fork engine (JUnit output), mount its jar with `TESTLUM_ENGINE_JAR_HOST`, or build the image with `--build-arg ENGINE_IMAGE=<image with the fork jar>`.
+The image carries the fork engine (stock 2.0.0 plus JUnit output, `junit-report` branch at a pinned commit, built in a build stage), so per-scenario results and the scenario-count gate work with nothing mounted. The first build compiles the engine and takes a while. To use another engine, mount its jar with `TESTLUM_ENGINE_JAR_HOST`, or build with `--build-arg ENGINE_REF=<commit>` or `ENGINE_REPO=<url>`.
 
 ## Tests
 

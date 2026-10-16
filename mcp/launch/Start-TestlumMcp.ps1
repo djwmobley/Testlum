@@ -44,7 +44,7 @@ if (Test-DockerReady) {
     }
     $idle = if ($env:TESTLUM_MCP_IDLE_SECONDS) { $env:TESTLUM_MCP_IDLE_SECONDS } else { '900' }
     $runArgs = @('run', '--rm', '-i', '--name', "testlum-mcp-$PID", '--label', 'app=testlum-mcp',
-        '--memory', '2g', '--cpus', '2', '-e', "TESTLUM_MCP_IDLE_SECONDS=$idle", '-v', "${TestsDir}:/work")
+        '--memory', '2g', '--cpus', '2', '--add-host=host.docker.internal:host-gateway', '-e', "TESTLUM_MCP_IDLE_SECONDS=$idle", '-v', "${TestsDir}:/work")
     if ($env:TESTLUM_ENGINE_JAR_HOST) { $runArgs += @('-v', "$($env:TESTLUM_ENGINE_JAR_HOST):/testlum/testlum-final.jar:ro") }
     if ($env:TESTLUM_PASS_ENV) {
         foreach ($n in $env:TESTLUM_PASS_ENV.Split(',')) { if ($n.Trim()) { $runArgs += @('-e', $n.Trim()) } }

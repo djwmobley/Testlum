@@ -56,6 +56,11 @@ class ToolsTest {
     }
 
     @Test
+    void stripsAnsiColorCodes() {
+        assertEquals("ERROR scenario failed", Runner.stripAnsi("\u001B[31mERROR\u001B[0m scenario \u001B[1;32mfailed\u001B[m"));
+    }
+
+    @Test
     void runWithoutEngineJarExplainsWhatToSet() {
         Tools t = new Tools(TestSupport.schemas(), null);
         var run = t.all().stream().filter(x -> x.name().equals("testlum_run")).findFirst().orElseThrow();
