@@ -56,6 +56,17 @@ class ToolsTest {
     }
 
     @Test
+    void listsEveryScenarioWithItsStatus() throws Exception {
+        Path f = tmp.resolve("junit.xml");
+        Files.writeString(f, "<testsuite><testcase name=\"a\" classname=\"scenarios/a/scenario.xml\"/>"
+                + "<testcase name=\"b\" classname=\"scenarios/b/scenario.xml\"><failure message=\"m\">full text</failure></testcase>"
+                + "<testcase name=\"c\" classname=\"scenarios/c/scenario.xml\"><skipped message=\"s\"/></testcase></testsuite>");
+        String out = Runner.scenarioLines(Xml.descendants(Xml.parse(f).getDocumentElement(), "testcase"));
+        assertTrue(out.startsWith("PASS a\nFAIL b\nSKIP c\n"), out);
+        assertTrue(out.contains("--- b (scenarios/b/scenario.xml)\nfull text"), out);
+    }
+
+    @Test
     void stripsAnsiColorCodes() {
         assertEquals("ERROR scenario failed", Runner.stripAnsi("\u001B[31mERROR\u001B[0m scenario \u001B[1;32mfailed\u001B[m"));
     }

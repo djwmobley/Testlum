@@ -146,6 +146,11 @@ final class Checker {
         try (Stream<Path> s = Files.list(p)) {
             for (Path f : s.filter(Files::isRegularFile).toList()) {
                 try {
+                    if (Files.size(f) == 0) {
+                        issues.add(err(dir + "/" + f.getFileName(), "Empty file. The engine parses every file in "
+                                + "locators as XML and exits 3 (Premature end of file); delete it or make it valid XML"));
+                        continue;
+                    }
                     Xml.parse(f);
                 } catch (Exception e) {
                     issues.add(err(dir + "/" + f.getFileName(),

@@ -135,20 +135,9 @@ final class Runner {
             Document d = Xml.parse(junit);
             Element suite = d.getDocumentElement();
             List<Element> cases = Xml.descendants(suite, "testcase");
-            int failed = 0;
-            int skipped = 0;
-            StringBuilder detail = new StringBuilder();
-            for (Element tc : cases) {
-                Element f = Xml.child(tc, "failure");
-                if (f != null) {
-                    failed++;
-                    detail.append("FAIL ").append(tc.getAttribute("name")).append(" (").append(tc.getAttribute("classname"))
-                            .append(")\n").append(cap(f.getTextContent().isBlank() ? f.getAttribute("message")
-                                    : f.getTextContent())).append('\n');
-                } else if (Xml.child(tc, "skipped") != null) {
-                    skipped++;
-                }
-            }
+            int failed = (int) cases.stream().filter(tc -> Xml.child(tc, "failure") != null).count();
+            int skipped = (int) cases.stream().filter(tc -> Xml.child(tc, "skipped") != null).count();
+            String detail = scenarioLines(cases);
             int executed = cases.size() - skipped;
             sb.append("scenarios: ").append(cases.size()).append(" total, ").append(executed - failed)
                     .append(" passed, ").append(failed).append(" failed, ").append(skipped).append(" skipped\n");
@@ -174,6 +163,27 @@ final class Runner {
             r.tail().forEach(l -> sb.append(stripAnsi(l)).append('\n'));
         }
         return sb.toString().stripTrailing();
+    }
+
+    /** One line per scenario (PASS, FAIL or SKIP), then the full text of each failure. */
+    static String scenarioLines(final List<Element> cases) {
+        StringBuilder lines = new StringBuilder();
+        StringBuilder failures = new StringBuilder();
+        for (Element tc : cases) {
+            String name = tc.getAttribute("name");
+            Element f = Xml.child(tc, "failure");
+            if (f != null) {
+                lines.append("FAIL ").append(name).append('\n');
+                failures.append("--- ").append(name).append(" (").append(tc.getAttribute("classname")).append(")\n")
+                        .append(cap(f.getTextContent().isBlank() ? f.getAttribute("message") : f.getTextContent()))
+                        .append('\n');
+            } else if (Xml.child(tc, "skipped") != null) {
+                lines.append("SKIP ").append(name).append('\n');
+            } else {
+                lines.append("PASS ").append(name).append('\n');
+            }
+        }
+        return lines.append(failures).toString();
     }
 
     private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\u001B\\[[0-9;?]*[ -/]*[@-~]");

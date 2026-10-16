@@ -97,7 +97,7 @@ err, text = call("testlum_check", dir=str(tests))
 expect(text.startswith("PASS"), "check passes once the file exists", text)
 
 err, text = call("testlum_run", dir=str(tests), timeoutSeconds=300, expectedScenarios=1)
-expect(not err and text.startswith("exit 0") and "1 passed" in text and "gate ok" in text, "run passes", text)
+expect(not err and text.startswith("exit 0") and "1 passed" in text and "PASS get-user" in text and "gate ok" in text, "run passes", text)
 
 (sc / "expected_1.json").write_text('{"id": 1, "name": "Somebody Else"}')
 err, text = call("testlum_run", dir=str(tests), timeoutSeconds=300)

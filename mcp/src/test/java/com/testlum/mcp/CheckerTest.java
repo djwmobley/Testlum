@@ -86,6 +86,13 @@ class CheckerTest {
     }
 
     @Test
+    void flagsEmptyLocatorFiles() throws IOException {
+        Files.writeString(tests.resolve("locators/pages/.keep"), "");
+        String r = check(false, "");
+        assertTrue(r.startsWith("FAIL") && r.contains("locators/pages/.keep") && r.contains("Empty file"), r);
+    }
+
+    @Test
     void scanCountsIncludes() throws IOException {
         scenario("inc", "<settings><tags>include</tags></settings>");
         scenario("real", "<settings><tags>smoke</tags></settings>");
