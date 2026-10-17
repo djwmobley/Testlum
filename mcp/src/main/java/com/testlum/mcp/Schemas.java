@@ -361,6 +361,14 @@ public final class Schemas {
         };
     }
 
+    /** The xmlns the root element of the given kind must carry. */
+    public String namespaceOf(final String kind) {
+        index();
+        String suffix = "|" + rootFor(kind);
+        return topElements.keySet().stream().filter(k -> k.endsWith(suffix)).findFirst()
+                .map(k -> k.substring(0, k.length() - suffix.length())).orElse("");
+    }
+
     /** Describes the element at a slash-separated path under the root of the given kind. */
     public String describe(final String kind, final String path) {
         index();
@@ -397,7 +405,8 @@ public final class Schemas {
             decl = findDecl(ct, step);
             shown = shown + "/" + step;
         }
-        return render(shown, decl);
+        String out = render(shown, decl);
+        return steps.isEmpty() ? out + "\nxmlns: " + namespaceOf(kind) : out;
     }
 
     private Element findDecl(final Element ct, final String name) {

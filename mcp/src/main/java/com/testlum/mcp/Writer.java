@@ -51,7 +51,8 @@ final class Writer {
             Files.writeString(scratch, xml, StandardCharsets.UTF_8);
             List<Schemas.Issue> bad = schemas.validate("scenario.xsd", scratch, "scenario.xml");
             if (!bad.isEmpty()) {
-                throw new Tool.ToolError("Not written, the scenario does not pass the schema:\n" + join(bad));
+                throw new Tool.ToolError("Not written, the scenario does not pass the schema (root must be <scenario xmlns=\""
+                        + schemas.namespaceOf("scenario") + "\">):\n" + join(bad));
             }
         } catch (IOException e) {
             throw new Tool.ToolError("Cannot stage the scenario: " + e.getMessage());

@@ -30,7 +30,7 @@ Without a usable Docker (the D-119 build container has no socket) the same launc
 
 Inside the container the tests folder is mounted at `/work`, so tool arguments use `/work/...` paths. The launchers forward only the env var names listed in `TESTLUM_PASS_ENV` (for example `QBO_ACCESS_TOKEN`); no value is ever written to a script.
 
-The tests folder is optional. With no argument the launchers use the folder the MCP client starts them in, so one global registration serves every project: whichever project you open is the folder mounted at `/work`. Pass `-TestsDir` (ps1) or a first argument (sh) only to pin a different folder.
+The tests folder is optional. With no argument the launchers use the folder the MCP client starts them in, so one global registration serves every project: whichever project you open is the folder mounted at `/work`. Pass `-TestsDir` (ps1) or a first argument (sh) only to pin a different folder. Set `TESTLUM_WORKDIR` to choose the folder when the client cannot (it is used when no argument is given, before the current folder).
 
 MCP client config, registered once for all projects (Windows example):
 

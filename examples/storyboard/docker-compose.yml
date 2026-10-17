@@ -22,3 +22,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  tests:
+    image: testlum-mcp:0.2.0
+    build: ../../mcp
+    profiles: [tests]
+    entrypoint: ["java", "-jar", "/testlum/testlum-final.jar", "--config=global-config.xml", "--path=/tests"]
+    environment:
+      LC_ALL: C.UTF-8
+    volumes:
+      - ./tests:/tests
+    depends_on:
+      - site
