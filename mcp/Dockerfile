@@ -1,4 +1,4 @@
-# Build:  docker build -t testlum-mcp:0.4.0 mcp/
+# Build:  docker build -t testlum-mcp:0.5.0 mcp/
 # The engine is the djwmobley fork at a pinned commit (stock 2.0.0 plus the jsonPath assertion, field-level diffs and JUnit output),
 # so per-scenario results and the scenario-count gate work with no jar mounted.
 # Another engine: mount its jar over /testlum/testlum-final.jar (TESTLUM_ENGINE_JAR_HOST in the

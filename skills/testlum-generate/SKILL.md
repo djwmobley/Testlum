@@ -5,7 +5,7 @@ description: Write Testlum API tests from a description, a work item or an API s
 
 # Generate Testlum tests
 
-Uses the testlum MCP tools. Tool paths are inside the container, so the tests folder is `/work/...`.
+Uses the testlum MCP tools. They run in a container where the tests folder is mounted at `/work`. Leave `dir` out and every tool uses it; never pass a Windows or other host path.
 
 Where the app runs: from inside the container the host machine is `host.docker.internal`, so a service published on port 18080 is `http://host.docker.internal:18080`. Never `localhost` (that is the container). Read the existing `config/<env>/integration.xml` before writing a new one, and reuse its aliases.
 

@@ -5,7 +5,7 @@ Point the MCP client config at this script. Never leave the container running.
   Start-TestlumMcp.ps1 [-TestsDir <folder>]   TestsDir is optional and defaults to $env:TESTLUM_WORKDIR, then the current folder; it is mounted at /work in the container
   Start-TestlumMcp.ps1 -Cleanup               remove any leftover testlum-mcp containers
 
-Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.4.0), TESTLUM_PASS_ENV (comma list of env var names to
+Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.5.0), TESTLUM_PASS_ENV (comma list of env var names to
 forward, no values here), TESTLUM_ENGINE_JAR_HOST (engine jar to mount instead of the image's),
 TESTLUM_MCP_IDLE_SECONDS (default 900), TESTLUM_MCP_JAR (server jar for the no-Docker path).
 Without a usable Docker it runs the jar as a plain stdio process.
@@ -16,7 +16,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$image = if ($env:TESTLUM_MCP_IMAGE) { $env:TESTLUM_MCP_IMAGE } else { 'testlum-mcp:0.4.0' }
+$image = if ($env:TESTLUM_MCP_IMAGE) { $env:TESTLUM_MCP_IMAGE } else { 'testlum-mcp:0.5.0' }
 function Say([string]$m) { [Console]::Error.WriteLine("testlum-mcp: $m") }
 
 $docker = Get-Command docker -ErrorAction SilentlyContinue
@@ -44,7 +44,7 @@ if (Test-DockerReady) {
     }
     $idle = if ($env:TESTLUM_MCP_IDLE_SECONDS) { $env:TESTLUM_MCP_IDLE_SECONDS } else { '900' }
     $runArgs = @('run', '--rm', '-i', '--name', "testlum-mcp-$PID", '--label', 'app=testlum-mcp',
-        '--memory', '2g', '--cpus', '2', '--add-host=host.docker.internal:host-gateway', '-e', "TESTLUM_MCP_IDLE_SECONDS=$idle", '-v', "${TestsDir}:/work")
+        '--memory', '2g', '--cpus', '2', '--add-host=host.docker.internal:host-gateway', '-e', "TESTLUM_MCP_IDLE_SECONDS=$idle", '-e', "TESTLUM_HOST_WORKDIR=$TestsDir", '-v', "${TestsDir}:/work")
     if ($env:TESTLUM_ENGINE_JAR_HOST) { $runArgs += @('-v', "$($env:TESTLUM_ENGINE_JAR_HOST):/testlum/testlum-final.jar:ro") }
     if ($env:TESTLUM_PASS_ENV) {
         foreach ($n in $env:TESTLUM_PASS_ENV.Split(',')) { if ($n.Trim()) { $runArgs += @('-e', $n.Trim()) } }

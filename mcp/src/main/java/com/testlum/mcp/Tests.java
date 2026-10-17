@@ -83,7 +83,7 @@ final class Tests {
     private static List<Info> read(final Path root) {
         Path dir = root.resolve("scenarios");
         if (!Files.isDirectory(dir)) {
-            throw new Tool.ToolError("No scenarios folder under " + root);
+            throw new Tool.ToolError("No scenarios folder under " + root + ". " + Dirs.RULE);
         }
         List<Info> out = new ArrayList<>();
         try (Stream<Path> s = Files.list(dir)) {

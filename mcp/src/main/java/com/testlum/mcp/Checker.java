@@ -32,7 +32,7 @@ final class Checker {
                  final String tagPattern) {
         Path root = Path.of(dirArg).toAbsolutePath().normalize();
         if (!Files.isDirectory(root)) {
-            throw new Tool.ToolError("Not a folder: " + root);
+            throw new Tool.ToolError("Not a folder: " + root + ". " + Dirs.RULE);
         }
         Pattern tagRx = tagPattern.isEmpty() ? null : compile(tagPattern);
         List<Schemas.Issue> issues = new ArrayList<>();

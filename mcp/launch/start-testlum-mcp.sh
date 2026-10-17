@@ -5,14 +5,14 @@
 #   start-testlum-mcp.sh [TESTS_DIR]     TESTS_DIR is optional and defaults to $TESTLUM_WORKDIR, then $PWD; it is mounted at /work in the container
 #   start-testlum-mcp.sh --cleanup       remove any leftover testlum-mcp containers
 #
-# Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.4.0), TESTLUM_PASS_ENV (comma list of env var names
+# Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.5.0), TESTLUM_PASS_ENV (comma list of env var names
 # to forward, no values here), TESTLUM_ENGINE_JAR_HOST (engine jar to mount instead of the image's),
 # TESTLUM_MCP_IDLE_SECONDS (default 900), TESTLUM_MCP_JAR (server jar for the no-Docker path).
 # Without a usable Docker it runs the jar as a plain stdio process (build containers, no socket).
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
-image=${TESTLUM_MCP_IMAGE:-testlum-mcp:0.4.0}
+image=${TESTLUM_MCP_IMAGE:-testlum-mcp:0.5.0}
 say() { printf '%s\n' "testlum-mcp: $*" >&2; }
 
 if [ "${1:-}" = "--cleanup" ]; then
@@ -44,7 +44,7 @@ if docker_ready; then
     docker build -t "$image" "$here/.." >&2 || { say "build failed"; exit 1; }
   fi
   set -- --rm -i --name "testlum-mcp-$$" --label app=testlum-mcp --memory 2g --cpus 2 --add-host=host.docker.internal:host-gateway \
-    -e TESTLUM_MCP_IDLE_SECONDS="${TESTLUM_MCP_IDLE_SECONDS:-900}" -v "$tests:/work"
+    -e TESTLUM_MCP_IDLE_SECONDS="${TESTLUM_MCP_IDLE_SECONDS:-900}" -e TESTLUM_HOST_WORKDIR="$tests" -v "$tests:/work"
   if [ -n "${TESTLUM_ENGINE_JAR_HOST:-}" ]; then
     set -- "$@" -v "$TESTLUM_ENGINE_JAR_HOST:/testlum/testlum-final.jar:ro"
   fi

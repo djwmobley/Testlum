@@ -16,6 +16,7 @@ public final class Tools {
     private final Checker checker;
     private final Runner runner;
     private final Writer writer;
+    private final Dirs dirs = Dirs.fromEnvironment();
     private final Tests tests = new Tests();
 
     public Tools(final Schemas schemas, final String engineJar) {
@@ -48,12 +49,12 @@ public final class Tools {
                         + "scenarios/, data/, locators/pages, locators/component) with valid placeholders. Never "
                         + "overwrites an existing file. Validates what it wrote.",
                 schema(props()
-                        .add("dir", prop("string", "Absolute path of the tests folder to create or complete"))
+                        .add("dir", prop("string", "Tests folder to create or complete. Leave out for /work. " + Dirs.RULE))
                         .add("env", prop("string", "Environment folder name, default sandbox"))
                         .add("project", prop("string", "Report project name, default tests"))
                         .add("apiAlias", prop("string", "API alias for integration.xml, default DEFAULT"))
-                        .add("apiUrl", prop("string", "API base url, default http://localhost:8080")), "dir"),
-                a -> scaffolder.scaffold(required(a, "dir"), text(a, "env", "sandbox"), text(a, "project", "tests"),
+                        .add("apiUrl", prop("string", "API base url, default http://localhost:8080"))),
+                a -> scaffolder.scaffold(dirs.resolve(a), text(a, "env", "sandbox"), text(a, "project", "tests"),
                         text(a, "apiAlias", "DEFAULT"), text(a, "apiUrl", "http://localhost:8080")));
     }
 
@@ -65,13 +66,13 @@ public final class Tools {
                         + "active=false and onlyThis=true flagged, optional tag rules). Returns PASS or FAIL then "
                         + "one line per finding as file:line:column [level] message.",
                 schema(props()
-                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("dir", prop("string", "Tests folder. Leave out for /work. " + Dirs.RULE))
                         .add("scenario", prop("string", "Only check this scenario folder name (default all)"))
                         .add("config", prop("string", "Global config file name, default global-config.xml"))
                         .add("requireTags", prop("boolean", "Error when a non-include scenario has no tags"))
                         .add("tagPattern", prop("string", "Regex every non-include scenario's tags text must match "
-                                + "in full, e.g. S-\\d+,.+")), "dir"),
-                a -> checker.check(required(a, "dir"), text(a, "scenario", ""), text(a, "config", "global-config.xml"),
+                                + "in full, e.g. S-\\d+,.+"))),
+                a -> checker.check(dirs.resolve(a), text(a, "scenario", ""), text(a, "config", "global-config.xml"),
                         a.path("requireTags").asBoolean(false), text(a, "tagPattern", "")));
     }
 
@@ -82,13 +83,13 @@ public final class Tools {
                         + "the report path. Needs TESTLUM_ENGINE_JAR. Per-scenario results need the JUnit output "
                         + "of the djwmobley fork; the stock engine gives exit code and console tail only.",
                 schema(props()
-                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("dir", prop("string", "Tests folder. Leave out for /work. " + Dirs.RULE))
                         .add("tags", prop("string", "Comma separated tags: run only scenarios with these tags"))
                         .add("config", prop("string", "Global config file name, default global-config.xml"))
                         .add("expectedScenarios", prop("integer", "Gate: fail if executed scenarios, minus "
                                 + "include-tagged ones, differ from this number"))
-                        .add("timeoutSeconds", prop("integer", "Kill the engine after this long, default 600")), "dir"),
-                a -> runner.run(required(a, "dir"), text(a, "config", "global-config.xml"), text(a, "tags", ""),
+                        .add("timeoutSeconds", prop("integer", "Kill the engine after this long, default 600"))),
+                a -> runner.run(dirs.resolve(a), text(a, "config", "global-config.xml"), text(a, "tags", ""),
                         a.path("expectedScenarios").asInt(-1), a.path("timeoutSeconds").asInt(600)));
     }
 
@@ -98,13 +99,13 @@ public final class Tools {
                         + "in one step. The scenario must pass the engine schema or nothing is written; the folder "
                         + "check runs afterwards and a failing check rolls the write back.",
                 schema(props()
-                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("dir", prop("string", "Tests folder. Leave out for /work. " + Dirs.RULE))
                         .add("name", prop("string", "Scenario folder name"))
                         .add("scenario", prop("string", "The full scenario.xml text"))
                         .add("files", prop("object", "File name to content, written next to scenario.xml"))
                         .add("overwrite", prop("boolean", "Replace an existing scenario of this name")),
-                        "dir", "name", "scenario"),
-                a -> writer.writeTest(required(a, "dir"), required(a, "name"), required(a, "scenario"),
+                        "name", "scenario"),
+                a -> writer.writeTest(dirs.resolve(a), required(a, "name"), required(a, "scenario"),
                         a.get("files"), a.path("overwrite").asBoolean(false)));
     }
 
@@ -114,12 +115,12 @@ public final class Tools {
                         + "settings/variations in the scenario, so it runs once per row. Reference columns as "
                         + "{{column}} in the scenario and in file names such as expected_{{id}}.json.",
                 schema(props()
-                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("dir", prop("string", "Tests folder. Leave out for /work. " + Dirs.RULE))
                         .add("name", prop("string", "Existing scenario folder name"))
                         .add("csv", prop("string", "Data file name, for example users.csv"))
                         .add("rows", prop("array", "Array of objects, one per variation, same keys in each")),
-                        "dir", "name", "csv", "rows"),
-                a -> writer.generateVariations(required(a, "dir"), required(a, "name"), required(a, "csv"),
+                        "name", "csv", "rows"),
+                a -> writer.generateVariations(dirs.resolve(a), required(a, "name"), required(a, "csv"),
                         a.get("rows")));
     }
 
@@ -128,8 +129,8 @@ public final class Tools {
                 "List the scenarios in a tests folder: name, tags (ticket ids go here), active or not, the "
                         + "variations file, the description, every http call as VERB endpoint and every include. "
                         + "Use it to match tests to tickets and to spot calls that no longer exist.",
-                schema(props().add("dir", prop("string", "Absolute path of the tests folder")), "dir"),
-                a -> tests.list(required(a, "dir")));
+                schema(props().add("dir", prop("string", "Tests folder. Leave out for /work. " + Dirs.RULE))),
+                a -> tests.list(dirs.resolve(a)));
     }
 
     private Tool deleteTest() {
@@ -137,9 +138,9 @@ public final class Tools {
                 "Delete scenarios/<name>. Refuses while another scenario includes it. Also removes its variations "
                         + "csv from data/ when no other scenario uses it.",
                 schema(props()
-                        .add("dir", prop("string", "Absolute path of the tests folder"))
-                        .add("name", prop("string", "Scenario folder name")), "dir", "name"),
-                a -> tests.delete(required(a, "dir"), required(a, "name")));
+                        .add("dir", prop("string", "Tests folder. Leave out for /work. " + Dirs.RULE))
+                        .add("name", prop("string", "Scenario folder name")), "name"),
+                a -> tests.delete(dirs.resolve(a), required(a, "name")));
     }
 
     // ---- small schema helpers ----

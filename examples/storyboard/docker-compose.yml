@@ -15,6 +15,7 @@ services:
       retries: 30
   site:
     build: ./site
+    pull_policy: build
     environment:
       DATABASE_URL: postgres://storyboard:storyboard@db:5432/storyboard
       SB14: ${SB14:-}
@@ -24,8 +25,9 @@ services:
       db:
         condition: service_healthy
   tests:
-    image: testlum-mcp:0.4.0
+    image: testlum-mcp:0.5.0
     build: ../../mcp
+    pull_policy: build
     profiles: [tests]
     entrypoint: ["java", "-jar", "/testlum/testlum-final.jar", "--config=global-config.xml", "--path=/tests"]
     environment:

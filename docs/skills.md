@@ -13,7 +13,7 @@ Five skills that teach an agent how to work with Testlum through the MCP server 
 ## Conventions the skills rely on
 
 - Tests carry their ticket id first in the tags, like `SB-14,api`. Coverage and staleness match on it.
-- Tool paths are container paths, so the tests folder is `/work/...`.
+- Tools run in a container where the tests folder is `/work`. Leave `dir` out and they use it.
 - Expected values come from the ticket or the API description, never from what the app returned.
 - Work items are read through an ADO tool if the agent has one (read-only). Without one, paste the text.
 
