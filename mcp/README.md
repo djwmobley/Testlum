@@ -7,7 +7,7 @@ An MCP server that helps agents write valid Testlum tests. It reads the engine's
 | `testlum_lookup` | Lists the commands a scenario may hold. With a path such as `http/get` or `assert/equal` it lists attributes (required or optional, allowed values, patterns) and child elements. `kind` can be `global-config` or `integration`. |
 | `testlum_scaffold` | Creates the folder layout the engine demands, with valid placeholders, and never overwrites a file. Validates what it wrote. |
 | `testlum_check` | Validates a tests folder without running it: XSD check of the global config, each `integration.xml` and each `scenario.xml`, folder layout, expected files exist, include targets exist and carry the `include` tag, http aliases exist, `active="false"` and `onlyThis="true"` flagged. Optional `requireTags` and `tagPattern`. |
-| `testlum_run` | Runs the engine headless and returns the exit code with its meaning, per-scenario pass or fail with the full failure text, and an optional scenario-count gate (`expectedScenarios`). Run only some scenarios with `tags`. |
+| `testlum_run` | Runs the engine headless and returns the exit code with its meaning, per-scenario pass or fail with the full failure text, and an optional run-count gate (`expectedScenarios`, counts runs, so each variation row is one). Run only some scenarios with `tags`. |
 | `testlum_write_test` | Writes a scenario (and its request/expected files) after checking it against the schema and the checker. Nothing is left on disk if the check fails. Refuses an existing scenario unless `overwrite` is set. |
 | `testlum_generate_variations` | Writes a CSV into `data/` and adds it as the scenario's `<variations>`, one run per row. Checked the same way, rolled back on failure. |
 
@@ -46,12 +46,12 @@ Inside the container `127.0.0.1` is the container itself. A stub running on the 
 
 ## Build
 
-    docker build -t testlum-mcp:0.1.0 mcp/          # image on the pinned engine image
+    docker build -t testlum-mcp:0.2.0 mcp/          # image on the pinned engine image
     mvn -f mcp/pom.xml package                      # jar, runs the unit tests
 
 Baked into the agent image instead of Docker: copy `testlum-mcp.jar` to `/opt/testlum-mcp/` and set `TESTLUM_ENGINE_JAR`; the shell launcher finds the jar there.
 
-The image carries the fork engine (stock 2.0.0 plus JUnit output, `junit-report` branch at a pinned commit, built in a build stage), so per-scenario results and the scenario-count gate work with nothing mounted. The first build compiles the engine and takes a while. To use another engine, mount its jar with `TESTLUM_ENGINE_JAR_HOST`, or build with `--build-arg ENGINE_REF=<commit>` or `ENGINE_REPO=<url>`.
+The image carries the fork engine (stock 2.0.0 plus jsonPath, field-level diffs and JUnit output, `package` branch at a pinned commit, built in a build stage), so per-scenario results and the scenario-count gate work with nothing mounted. The first build compiles the engine and takes a while. To use another engine, mount its jar with `TESTLUM_ENGINE_JAR_HOST`, or build with `--build-arg ENGINE_REF=<commit>` or `ENGINE_REPO=<url>`.
 
 ## Tests
 

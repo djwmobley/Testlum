@@ -5,14 +5,14 @@
 #   start-testlum-mcp.sh [TESTS_DIR]     TESTS_DIR is optional and defaults to $PWD, the folder the MCP client starts it in; it is mounted at /work in the container
 #   start-testlum-mcp.sh --cleanup       remove any leftover testlum-mcp containers
 #
-# Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.1.0), TESTLUM_PASS_ENV (comma list of env var names
+# Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.2.0), TESTLUM_PASS_ENV (comma list of env var names
 # to forward, no values here), TESTLUM_ENGINE_JAR_HOST (engine jar to mount instead of the image's),
 # TESTLUM_MCP_IDLE_SECONDS (default 900), TESTLUM_MCP_JAR (server jar for the no-Docker path).
 # Without a usable Docker it runs the jar as a plain stdio process (build containers, no socket).
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
-image=${TESTLUM_MCP_IMAGE:-testlum-mcp:0.1.0}
+image=${TESTLUM_MCP_IMAGE:-testlum-mcp:0.2.0}
 say() { printf '%s\n' "testlum-mcp: $*" >&2; }
 
 if [ "${1:-}" = "--cleanup" ]; then

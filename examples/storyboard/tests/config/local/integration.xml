@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <integrations xmlns="http://www.testlum.com/testing/model/global-config">
     <apis>
-        <api alias="DEFAULT" enabled="true" url="http://localhost:8080"/>
+        <api alias="DEFAULT" enabled="true" url="http://localhost:18080"/>
     </apis>
     <postgresIntegration>
         <postgres alias="DEFAULT" enabled="true">
             <jdbcDriver>org.postgresql.Driver</jdbcDriver>
             <username>storyboard</username>
             <password>storyboard</password>
-            <connectionUrl>jdbc:postgresql://localhost:5432/storyboard</connectionUrl>
+            <connectionUrl>jdbc:postgresql://localhost:15432/storyboard</connectionUrl>
             <hikari>
                 <connectionTimeout>30000</connectionTimeout>
                 <idleTimeout>600000</idleTimeout>

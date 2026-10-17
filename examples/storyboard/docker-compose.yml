@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: storyboard
       POSTGRES_DB: storyboard
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
@@ -18,7 +18,7 @@ services:
     environment:
       DATABASE_URL: postgres://storyboard:storyboard@db:5432/storyboard
     ports:
-      - "8080:8080"
+      - "18080:8080"
     depends_on:
       db:
         condition: service_healthy

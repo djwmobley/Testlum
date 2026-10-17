@@ -1,11 +1,11 @@
-# Build:  docker build -t testlum-mcp:0.1.0 mcp/
-# The engine is the djwmobley fork at a pinned commit (junit-report: stock 2.0.0 plus JUnit output),
+# Build:  docker build -t testlum-mcp:0.2.0 mcp/
+# The engine is the djwmobley fork at a pinned commit (stock 2.0.0 plus the jsonPath assertion, field-level diffs and JUnit output),
 # so per-scenario results and the scenario-count gate work with no jar mounted.
 # Another engine: mount its jar over /testlum/testlum-final.jar (TESTLUM_ENGINE_JAR_HOST in the
 # launchers) or build with --build-arg ENGINE_REF=<commit> / ENGINE_REPO=<url>.
 ARG BASE_IMAGE=eclipse-temurin:17-jre
 ARG ENGINE_REPO=https://github.com/djwmobley/Testlum.git
-ARG ENGINE_REF=f5e750525b30a6b7e34e8a3d69865d45a297a460
+ARG ENGINE_REF=f52dc9a4820173ffd01c280c62befefea03e44cc
 
 FROM maven:3.9-eclipse-temurin-17 AS server
 WORKDIR /src

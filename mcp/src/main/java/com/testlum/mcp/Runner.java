@@ -147,11 +147,11 @@ final class Runner {
                 int counted = executed - scan.includeTagged();
                 if (counted != expected) {
                     gateFailed = true;
-                    sb.append("GATE FAILED: ").append(counted).append(" scenarios ran (").append(executed)
+                    sb.append("GATE FAILED: ").append(counted).append(" runs ran (").append(executed)
                             .append(" minus ").append(scan.includeTagged()).append(" include-tagged), expected ")
                             .append(expected).append('\n');
                 } else {
-                    sb.append("gate ok: ").append(counted).append(" scenarios ran, as expected\n");
+                    sb.append("gate ok: ").append(counted).append(" runs ran, as expected\n");
                 }
             }
         }
