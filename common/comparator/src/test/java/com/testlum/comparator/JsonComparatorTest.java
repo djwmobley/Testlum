@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** Unit tests for {@link JsonComparator} verifying boolean, number, string, array, and object comparison. */
@@ -214,6 +216,50 @@ class JsonComparatorTest {
             assertDoesNotThrow(() -> strict.compare(
                     node("{\"count\":\"c(>0)\"}"),
                     node("{\"count\":\"10\"}")));
+        }
+    }
+
+    @Nested
+    class MismatchPaths {
+        private String message(final String expected, final String actual) {
+            return assertThrows(MatchException.class, () -> strict.compare(node(expected), node(actual))).getMessage();
+        }
+
+        @Test
+        void nestedFieldNamesItsPath() {
+            assertEquals("$.team.lead: Property [Ana] is not equal to [Bob]",
+                    message("{\"id\":1,\"team\":{\"lead\":\"Ana\"}}", "{\"id\":1,\"team\":{\"lead\":\"Bob\"}}"));
+        }
+
+        @Test
+        void arrayElementNamesItsIndex() {
+            assertEquals("$.items[1].qty: Property [2] is not equal to [3]",
+                    message("{\"items\":[{\"qty\":1},{\"qty\":2}]}", "{\"items\":[{\"qty\":1},{\"qty\":3}]}"));
+        }
+
+        @Test
+        void topLevelValueIsTheRoot() {
+            assertEquals("$: Property [1] is not equal to [2]", message("1", "2"));
+        }
+
+        @Test
+        void missingPropertyNamesTheParent() {
+            assertEquals("$.team: Property with name [lead] not found",
+                    message("{\"team\":{\"lead\":\"Ana\"}}", "{\"team\":{\"other\":\"x\"}}")
+                            .replace(", unexpected [other]", ""));
+        }
+
+        @Test
+        void strictCountMismatchListsMissingAndUnexpected() {
+            String m = message("{\"a\":1,\"b\":2}", "{\"a\":1,\"c\":3}");
+            assertTrue(m.startsWith("$: Difference in properties") && m.contains("missing [b]")
+                    && m.contains("unexpected [c]") || m.contains("Property with name [b] not found"), m);
+        }
+
+        @Test
+        void oddKeysUseBrackets() {
+            assertEquals("$['first-name']: Property [A] is not equal to [B]",
+                    message("{\"first-name\":\"A\"}", "{\"first-name\":\"B\"}"));
         }
     }
 }
