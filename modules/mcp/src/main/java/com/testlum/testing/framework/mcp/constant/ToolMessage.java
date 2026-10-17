@@ -42,6 +42,8 @@ public final class ToolMessage {
     public static final String CANNOT_STAGE = "Cannot stage the scenario: %s";
     public static final String UNCHECKABLE_INCLUDE = "Not deleted: scenario %s includes %s, which has a variable "
             + "and a relative part, so it could be any scenario";
+    public static final String TEMP_NOT_REMOVED =
+            "Not written: the temporary file used to check the scenario could not be removed: %s";
     public static final String CANNOT_CLEAN_UP = "Written, but these leftovers could not be removed: %s";
     public static final String CSV_UNVERIFIED = "Not written: data/%s may be read by a scenario that cannot be read "
             + "(%s), fix or remove those first";

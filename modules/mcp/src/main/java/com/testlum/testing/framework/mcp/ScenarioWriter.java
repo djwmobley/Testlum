@@ -64,16 +64,40 @@ final class ScenarioWriter {
 
     private void requireValid(final String xml) {
         Path scratch = null;
+        ToolException failure = null;
         try {
             scratch = Files.createTempFile("testlum-mcp-", ".xml");
             Files.writeString(scratch, xml, StandardCharsets.UTF_8);
             report(schemas.validate("scenario.xsd", scratch, Layout.SCENARIO_FILE));
         } catch (IOException e) {
-            throw new ToolException(e, ToolMessage.CANNOT_STAGE, e.getMessage());
-        } finally {
+            failure = new ToolException(e, ToolMessage.CANNOT_STAGE, e.getMessage());
+        } catch (ToolException e) {
+            failure = e;
+        }
+        throwFirst(failure, removed(scratch));
+    }
+
+    /** The scratch file is always removed; a failure to remove it is reported, next to the real failure if any. */
+    private static IOException removed(final Path scratch) {
+        try {
             if (scratch != null) {
-                scratch.toFile().delete();
+                Files.deleteIfExists(scratch);
             }
+            return null;
+        } catch (IOException e) {
+            return new IOException(scratch + ": " + e.getMessage(), e);
+        }
+    }
+
+    private static void throwFirst(final ToolException failure, final IOException leftover) {
+        if (failure != null) {
+            if (leftover != null) {
+                failure.addSuppressed(leftover);
+            }
+            throw failure;
+        }
+        if (leftover != null) {
+            throw new ToolException(leftover, ToolMessage.TEMP_NOT_REMOVED, leftover.getMessage());
         }
     }
 
@@ -86,7 +110,7 @@ final class ScenarioWriter {
 
     private static void requireFree(final Path root, final Iterable<Path> targets, final boolean overwrite) {
         for (Path p : targets) {
-            if (Files.exists(p) && !overwrite) {
+            if (!overwrite && Layout.existsAnyCase(root, p)) {
                 throw new ToolException(ToolMessage.ALREADY_EXISTS, root.relativize(p).toString().replace('\\', '/'));
             }
         }
@@ -96,7 +120,7 @@ final class ScenarioWriter {
     private void requireUnshared(final Path root, final String name, final Iterable<Path> targets) {
         Path data = root.resolve(Layout.DATA);
         for (Path p : targets) {
-            if (p.getParent().equals(data) && Files.exists(p)) {
+            if (p.getParent().equals(data) && Layout.existsAnyCase(root, p)) {
                 ScenarioCatalog.CsvReaders readers = catalog.readersOf(root, p.getFileName().toString(), name);
                 requireNone(p, readers);
             }

@@ -113,6 +113,18 @@ class ScenarioWriterTest {
     }
 
     @Test
+    void aCaseVariantOfASharedCsvIsTheSameFile() throws IOException {
+        write("user", "{\"expected_1.json\":\"{}\",\"data/users.csv\":\"id\\n1\\n\"}", false);
+        String msg = assertThrows(ToolException.class, () -> write("other", "{\"data/USERS.csv\":\"id\\n9\\n\"}", true))
+                .getMessage();
+        assertTrue(msg.contains("is read by user"), msg);
+        assertEquals("id\n1\n", read("data/users.csv"));
+        assertFalse(Files.exists(tmp.resolve("data/USERS.csv")));
+        assertTrue(assertThrows(ToolException.class, () -> write("third", "{\"data/Users.csv\":\"x\"}", false))
+                .getMessage().contains("already exists"));
+    }
+
+    @Test
     void aFailureWhileWritingLeavesTheExistingFilesAndNoTempFilesBehind() throws IOException {
         Files.writeString(tmp.resolve("data/users.csv"), "old");
         Files.writeString(tmp.resolve("scenarios/user"), "in the way");

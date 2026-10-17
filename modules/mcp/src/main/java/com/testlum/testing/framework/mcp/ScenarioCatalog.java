@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -93,7 +95,7 @@ final class ScenarioCatalog {
 
     private static void requireNoReaders(final Path root, final String name, final List<Info> staying,
                                          final List<Info> doomed) {
-        if (doomed.stream().noneMatch(i -> Layout.sameName(i.name(), name))) {
+        if (doomed.stream().noneMatch(i -> i.name().equals(name))) {
             throw new ToolException(ToolMessage.NO_SUCH_SCENARIO, name);
         }
         List<String> unreadable = staying.stream().filter(i -> !i.readable()).map(Info::name).toList();
@@ -107,34 +109,62 @@ final class ScenarioCatalog {
         }
     }
 
+    /** The include is read as the engine would on any system: backslashes are separators, "./" and "//" are noise. */
     private static void requireNotAimedAt(final Path root, final String reader, final String include,
                                           final List<Info> doomed) {
-        if (include.contains("{{") && Arrays.asList(include.split("/")).contains("..")) {
+        String path = include.trim().replace('\\', '/').replaceAll("/{2,}", "/").replaceAll("^(\\./)+", "");
+        boolean variable = path.contains("{{");
+        if (variable && Arrays.asList(path.split("/")).contains("..")) {
             throw new ToolException(ToolMessage.UNCHECKABLE_INCLUDE, reader, include);
         }
-        String hit = include.contains("{{") ? couldBe(include, doomed) : resolvesTo(root, include, doomed);
+        String hit = variable ? couldBe(path, doomed) : resolvesTo(root, path, doomed);
+        hit = hit != null || variable ? hit : named(root, path, doomed);
         if (hit != null) {
             throw new ToolException(ToolMessage.STILL_INCLUDED, reader, hit);
         }
     }
 
-    /** The scenario the engine would run for this include, found the way the engine looks (FileSearcher). */
+    /**
+     * The scenario the engine would run for this include, found the way the engine looks (FileSearcher), both for
+     * the path as written and with its ".." parts resolved, since the search walks up from whichever folder is missing.
+     */
     private static String resolvesTo(final Path root, final String include, final List<Info> doomed) {
-        File start = new File(root.resolve(Layout.SCENARIOS).toFile(), include.trim());
-        return FileSearcher.find(start, root.toFile(), (dir, file) -> file.equals(Layout.SCENARIO_FILE))
+        Path scenarios = root.resolve(Layout.SCENARIOS).toAbsolutePath().normalize();
+        return Stream.of(new File(scenarios.toFile(), include), scenarios.resolve(include).normalize().toFile())
+                .map(start -> FileSearcher.find(start, root.toFile(), (dir, file) -> file.equals(Layout.SCENARIO_FILE)))
+                .flatMap(Optional::stream)
                 .map(f -> f.getParentFile().toPath().toAbsolutePath().normalize())
-                .flatMap(folder -> doomed.stream().map(Info::name).filter(n -> folder.equals(
-                        root.resolve(Layout.SCENARIOS).resolve(n).toAbsolutePath().normalize())).findFirst())
+                .map(folder -> doomedAt(scenarios, folder, doomed)).filter(Objects::nonNull).findFirst().orElse(null);
+    }
+
+    /**
+     * The file system may not resolve the include (a different letter case on a case-sensitive one, say), but a
+     * system that does would, so a scenario the written path names, or sits above, counts whatever the case.
+     */
+    private static String named(final Path root, final String include, final List<Info> doomed) {
+        Path scenarios = root.resolve(Layout.SCENARIOS).toAbsolutePath().normalize();
+        String relative = scenarios.relativize(scenarios.resolve(include).normalize()).toString().replace('\\', '/');
+        return doomed.stream().map(Info::name)
+                .filter(n -> Layout.sameName(relative, n) || Layout.startsWithName(relative, n + "/")).findFirst()
                 .orElse(null);
     }
 
-    /** A variable stands for anything, so the include is taken to name every scenario it could, or one below. */
+    private static String doomedAt(final Path scenarios, final Path folder, final List<Info> doomed) {
+        return doomed.stream().map(Info::name).filter(n -> folder.toString()
+                .equalsIgnoreCase(scenarios.resolve(n).normalize().toString())).findFirst().orElse(null);
+    }
+
+    /**
+     * A variable stands for anything, slashes included, so the include is taken to name every scenario it could.
+     * The search also walks up from a folder that does not exist, so a scenario above anything the include could
+     * name counts too.
+     */
     private static String couldBe(final String include, final List<Info> doomed) {
-        Pattern shape = Pattern.compile(Arrays.stream(include.trim().split("\\{\\{[^}]*}}", -1)).map(Pattern::quote)
-                .collect(Collectors.joining(".*")), Layout.windows() ? Pattern.CASE_INSENSITIVE : 0);
-        return doomed.stream().map(Info::name)
-                .filter(n -> shape.matcher(n).matches() || shape.matcher(n + "/x").matches()).findFirst()
-                .orElse(null);
+        Pattern shape = Pattern.compile(Arrays.stream(include.split("\\{\\{[^}]*}}", -1)).map(Pattern::quote)
+                .collect(Collectors.joining(".*")), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        String fixed = include.substring(0, include.indexOf("{{"));
+        return doomed.stream().map(Info::name).filter(n -> shape.matcher(n).matches()
+                || Layout.startsWithName(fixed, n + "/") || Layout.startsWithName(n, fixed)).findFirst().orElse(null);
     }
 
     private static void remove(final Path dir) {

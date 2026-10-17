@@ -198,6 +198,32 @@ class ScenarioCatalogTest {
     }
 
     @Test
+    void aVariableStandsForAnythingIncludingSeveralSegments() throws IOException {
+        scenario("group", "", "include", "");
+        scenario("group/a/leaf", "", "include", "");
+        scenario("user", "", "api", include("group/{{part}}/leaf"));
+        assertThrows(ToolException.class, () -> delete("group/a/leaf"));
+        assertThrows(ToolException.class, () -> delete("group"));
+    }
+
+    @Test
+    void aLeadingDotSlashDoesNotHideAVariableInclude() throws IOException {
+        scenario("group/x", "", "include", "");
+        scenario("user", "", "api", include("./group/{{part}}"));
+        assertThrows(ToolException.class, () -> delete("group/x"));
+    }
+
+    @Test
+    void backslashesAndLetterCaseDoNotHideAnInclude() throws IOException {
+        scenario("group/child", "", "include", "");
+        scenario("user", "", "api", include("group\\other\\..\\child"));
+        assertThrows(ToolException.class, () -> delete("group/child"));
+        Files.delete(tmp.resolve("scenarios/user/scenario.xml"));
+        scenario("shout", "", "api", include("GROUP/Child"));
+        assertThrows(ToolException.class, () -> delete("group/child"));
+    }
+
+    @Test
     void doesNotNameACsvThatWasNeverThere() throws IOException {
         scenario("one", "ghost.csv", "api", "");
         assertEquals("Deleted scenarios/one", delete("one"));
