@@ -53,7 +53,9 @@ final class JsonPathAssertion {
     private String parse(final String body) {
         String path = assertion.getPath();
         try {
-            value = JsonPath.parse(body).read(path);
+            JsonPath compiled = JsonPath.compile(path);
+            value = JsonPath.parse(body).read(compiled);
+            found = compiled.isDefinite() || !(value instanceof List<?> list && list.isEmpty());
         } catch (PathNotFoundException e) {
             found = false;
         } catch (InvalidJsonException | IllegalArgumentException e) {

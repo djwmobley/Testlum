@@ -71,4 +71,14 @@ class JsonPathAssertionTest {
     void invalidJsonIsReported() {
         assertTrue(JsonPathAssertion.check("not json", assertion("$.a", null, null, null)).contains("valid JSON"));
     }
+
+    @Test
+    void filterThatMatchesNothingCountsAsNotFound() {
+        String list = "[{\"a\":\"Ana\"},{\"a\":\"Ben\"}]";
+        assertNull(JsonPathAssertion.check(list, assertion("$[?(@.a=='Zed')]", false, null, null)));
+        assertEquals("$[?(@.a=='Zed')]: not found",
+                JsonPathAssertion.check(list, assertion("$[?(@.a=='Zed')]", null, null, null)));
+        assertNull(JsonPathAssertion.check(list, assertion("$[?(@.a=='Ana')]", true, null, null)));
+        assertNull(JsonPathAssertion.check("{\"items\":[]}", assertion("$.items", true, null, null)));
+    }
 }

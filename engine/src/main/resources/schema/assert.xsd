@@ -23,7 +23,11 @@
         <x:annotation>
             <x:documentation>Checks one field of a JSON body: it exists, equals a value or matches a regex.
                 The body is the last HTTP response unless fromVar names a variable. With none of exists, equals
-                or matches, the field must exist. All given checks must hold.</x:documentation>
+                or matches, the field must exist. All given checks must hold.
+                A path with a filter or wildcard (indefinite) that matches nothing counts as not found, so
+                exists="false" on $[?(@.status!='done')] says no item has another status. Pair it with an
+                exists check on the positive filter, or an empty list passes that test without proving anything.
+                Example: path="$.items[?(@.assignee=='Ana')].title" matches="\[.*\]".</x:documentation>
         </x:annotation>
         <x:complexContent>
             <x:extension base="tns:abstractCommand">
