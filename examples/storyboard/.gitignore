@@ -1,0 +1,3 @@
+node_modules/
+tests/report/
+tests/scenarios/*/action_*_actual.json
