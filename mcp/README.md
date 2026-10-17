@@ -8,6 +8,8 @@ An MCP server that helps agents write valid Testlum tests. It reads the engine's
 | `testlum_scaffold` | Creates the folder layout the engine demands, with valid placeholders, and never overwrites a file. Validates what it wrote. |
 | `testlum_check` | Validates a tests folder without running it: XSD check of the global config, each `integration.xml` and each `scenario.xml`, folder layout, expected files exist, include targets exist and carry the `include` tag, http aliases exist, `active="false"` and `onlyThis="true"` flagged. Optional `requireTags` and `tagPattern`. |
 | `testlum_run` | Runs the engine headless and returns the exit code with its meaning, per-scenario pass or fail with the full failure text, and an optional scenario-count gate (`expectedScenarios`). Run only some scenarios with `tags`. |
+| `testlum_write_test` | Writes a scenario (and its request/expected files) after checking it against the schema and the checker. Nothing is left on disk if the check fails. Refuses an existing scenario unless `overwrite` is set. |
+| `testlum_generate_variations` | Writes a CSV into `data/` and adds it as the scenario's `<variations>`, one run per row. Checked the same way, rolled back on failure. |
 
 Per-scenario results need the JUnit output of the fork (branch `junit-report`), which the Docker image carries. With the stock engine you get the exit code and the console tail. Console lines are returned with color codes removed.
 
