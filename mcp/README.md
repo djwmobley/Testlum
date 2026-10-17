@@ -10,6 +10,8 @@ An MCP server that helps agents write valid Testlum tests. It reads the engine's
 | `testlum_run` | Runs the engine headless and returns the exit code with its meaning, per-scenario pass or fail with the full failure text, and an optional run-count gate (`expectedScenarios`, counts runs, so each variation row is one). Run only some scenarios with `tags`. |
 | `testlum_write_test` | Writes a scenario (and its request/expected files) after checking it against the schema and the checker. Nothing is left on disk if the check fails. Refuses an existing scenario unless `overwrite` is set. |
 | `testlum_generate_variations` | Writes a CSV into `data/` and adds it as the scenario's `<variations>`, one run per row. Checked the same way, rolled back on failure. |
+| `testlum_list_tests` | Lists the scenarios in a tests folder: tags (ticket ids), variations file, description, every call as `VERB /endpoint`, every include. |
+| `testlum_delete_test` | Deletes a scenario. Refuses while another scenario includes it; removes its variations csv when nothing else uses it. |
 
 Per-scenario results need the JUnit output of the fork (branch `junit-report`), which the Docker image carries. With the stock engine you get the exit code and the console tail. Console lines are returned with color codes removed.
 
@@ -46,7 +48,7 @@ Inside the container `127.0.0.1` is the container itself. A stub running on the 
 
 ## Build
 
-    docker build -t testlum-mcp:0.2.0 mcp/          # image on the pinned engine image
+    docker build -t testlum-mcp:0.3.0 mcp/          # image on the pinned engine image
     mvn -f mcp/pom.xml package                      # jar, runs the unit tests
 
 Baked into the agent image instead of Docker: copy `testlum-mcp.jar` to `/opt/testlum-mcp/` and set `TESTLUM_ENGINE_JAR`; the shell launcher finds the jar there.

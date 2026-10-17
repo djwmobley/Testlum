@@ -23,7 +23,7 @@ services:
       db:
         condition: service_healthy
   tests:
-    image: testlum-mcp:0.2.0
+    image: testlum-mcp:0.3.0
     build: ../../mcp
     profiles: [tests]
     entrypoint: ["java", "-jar", "/testlum/testlum-final.jar", "--config=global-config.xml", "--path=/tests"]

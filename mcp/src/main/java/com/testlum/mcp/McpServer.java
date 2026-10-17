@@ -137,7 +137,7 @@ public final class McpServer {
         r.putObject("capabilities").putObject("tools");
         ObjectNode info = r.putObject("serverInfo");
         info.put("name", "testlum-mcp");
-        info.put("version", "0.2.0");
+        info.put("version", "0.3.0");
         return r;
     }
 

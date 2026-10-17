@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 
-/** The tools: look up commands, scaffold, check, run, write a test, generate variations. */
+/** The tools: look up commands, scaffold, check, run, write a test, generate variations, list and delete tests. */
 public final class Tools {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -16,6 +16,7 @@ public final class Tools {
     private final Checker checker;
     private final Runner runner;
     private final Writer writer;
+    private final Tests tests = new Tests();
 
     public Tools(final Schemas schemas, final String engineJar) {
         this.schemas = schemas;
@@ -26,7 +27,7 @@ public final class Tools {
     }
 
     public List<Tool> all() {
-        return List.of(lookup(), scaffold(), check(), run(), writeTest(), variations());
+        return List.of(lookup(), scaffold(), check(), run(), writeTest(), variations(), listTests(), deleteTest());
     }
 
     private Tool lookup() {
@@ -120,6 +121,25 @@ public final class Tools {
                         "dir", "name", "csv", "rows"),
                 a -> writer.generateVariations(required(a, "dir"), required(a, "name"), required(a, "csv"),
                         a.get("rows")));
+    }
+
+    private Tool listTests() {
+        return new Tool("testlum_list_tests",
+                "List the scenarios in a tests folder: name, tags (ticket ids go here), active or not, the "
+                        + "variations file, the description, every http call as VERB endpoint and every include. "
+                        + "Use it to match tests to tickets and to spot calls that no longer exist.",
+                schema(props().add("dir", prop("string", "Absolute path of the tests folder")), "dir"),
+                a -> tests.list(required(a, "dir")));
+    }
+
+    private Tool deleteTest() {
+        return new Tool("testlum_delete_test",
+                "Delete scenarios/<name>. Refuses while another scenario includes it. Also removes its variations "
+                        + "csv from data/ when no other scenario uses it.",
+                schema(props()
+                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("name", prop("string", "Scenario folder name")), "dir", "name"),
+                a -> tests.delete(required(a, "dir"), required(a, "name")));
     }
 
     // ---- small schema helpers ----

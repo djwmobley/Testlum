@@ -5,7 +5,7 @@
         <name>create-story</name>
     </overview>
     <settings>
-        <tags>api,db</tags>
+        <tags>SB-3,api,db</tags>
     </settings>
     <var comment="Random title so reruns do not clash" name="suffix">
         <generate length="6"><alphabetic/></generate>

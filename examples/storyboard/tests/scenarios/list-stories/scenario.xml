@@ -5,7 +5,7 @@
         <name>list-stories</name>
     </overview>
     <settings>
-        <tags>smoke,api</tags>
+        <tags>SB-1,smoke,api</tags>
     </settings>
     <http comment="Get all stories" alias="DEFAULT">
         <get endpoint="/api/stories">

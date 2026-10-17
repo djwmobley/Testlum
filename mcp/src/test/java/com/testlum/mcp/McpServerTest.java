@@ -36,7 +36,7 @@ class McpServerTest {
         List<String> lines = buf.toString(StandardCharsets.UTF_8).lines().toList();
         assertEquals(5, lines.size(), "the notification gets no reply");
         assertEquals("testlum-mcp", JSON.readTree(lines.get(0)).at("/result/serverInfo/name").asText());
-        assertEquals(6, JSON.readTree(lines.get(1)).at("/result/tools").size());
+        assertEquals(8, JSON.readTree(lines.get(1)).at("/result/tools").size());
         JsonNode call = JSON.readTree(lines.get(2)).path("result");
         assertTrue(call.at("/content/0/text").asText().contains("endpoint"));
         assertTrue(JSON.readTree(lines.get(3)).at("/result/isError").asBoolean());

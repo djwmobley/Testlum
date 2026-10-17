@@ -5,7 +5,7 @@
         <name>story-not-found</name>
     </overview>
     <settings>
-        <tags>api</tags>
+        <tags>SB-2,api</tags>
     </settings>
     <http comment="Get a story that does not exist" alias="DEFAULT">
         <get endpoint="/api/stories/999">

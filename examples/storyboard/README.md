@@ -11,3 +11,5 @@ That builds the images the first time (the engine compile takes a while), starts
 Six scenarios, 16 runs since each CSV row is a run: listing, lookup by id (5 stories), not found, create, rejected input (5 bad payloads) and moving a story between statuses (3 runs).
 
 The tests were generated with the MCP tools in `../../mcp`, not typed by hand. The one manual edit is the Postgres block in `tests/config/local/integration.xml`, which points at the compose service names.
+
+`tickets/SB-14.md` is a made-up ticket for the filter-by-assignee feature. The site does not build it yet, on purpose, so it can be used to try the Testlum skills in `../../skills`. The existing tests are tagged SB-1 to SB-4 the same way.

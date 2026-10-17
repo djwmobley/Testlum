@@ -151,4 +151,26 @@ class ToolsTest {
         assertTrue(assertThrows(Tool.ToolError.class, () -> w.generateVariations(tmp.toString(), "user", "u.csv",
                 json("[{\"id\":\"1\"},{\"x\":\"2\"}]"))).getMessage().contains("same columns"));
     }
+
+    @Test
+    void listAndDeleteTests() throws Exception {
+        Path sc = tmp.resolve("scenarios");
+        String xml = "<scenario xmlns=\"http://www.testlum.com/testing/model/scenario\"><overview><description>Reads one</description></overview>"
+                + "<settings><variations>ids.csv</variations><tags>ADO-7,api</tags></settings>"
+                + "<http alias=\"DEFAULT\"><get endpoint=\"/api/x/{{id}}\"><response code=\"200\"/></get></http>%s</scenario>";
+        Files.createDirectories(sc.resolve("one"));
+        Files.createDirectories(sc.resolve("two"));
+        Files.createDirectories(tmp.resolve("data"));
+        Files.writeString(tmp.resolve("data/ids.csv"), "id\n1\n");
+        Files.writeString(sc.resolve("one/scenario.xml"), xml.formatted(""));
+        Files.writeString(sc.resolve("two/scenario.xml"), xml.formatted("<include scenario=\"one\"/>"));
+        Tests t = new Tests();
+        String list = t.list(tmp.toString());
+        assertTrue(list.contains("one | tags: ADO-7,api | variations: ids.csv"), list);
+        assertTrue(list.contains("GET /api/x/{{id}}"), list);
+        assertTrue(assertThrows(Tool.ToolError.class, () -> t.delete(tmp.toString(), "one")).getMessage().contains("two includes"));
+        assertTrue(t.delete(tmp.toString(), "two").startsWith("Deleted scenarios/two"));
+        assertTrue(t.delete(tmp.toString(), "one").contains("data/ids.csv"));
+        assertTrue(Files.notExists(sc.resolve("one")));
+    }
 }
