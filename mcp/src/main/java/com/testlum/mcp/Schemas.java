@@ -47,6 +47,7 @@ public final class Schemas {
     private final Map<String, Element> complexTypes = new HashMap<>();
     private final Map<String, Element> simpleTypes = new HashMap<>();
     private final Map<String, Element> topElements = new HashMap<>();
+    private final Map<String, Element> groups = new HashMap<>();
     private boolean indexed;
 
     public Schemas(final String xsdDir, final String engineJar) {
@@ -178,10 +179,12 @@ public final class Schemas {
                 Document d = f.newDocumentBuilder().parse(p.toFile());
                 for (Element e : children(d.getDocumentElement(), null)) {
                     String n = e.getAttribute("name");
+                    String ns = d.getDocumentElement().getAttribute("targetNamespace");
                     switch (e.getLocalName()) {
-                        case "complexType" -> complexTypes.put(n, e);
-                        case "simpleType" -> simpleTypes.put(n, e);
-                        case "element" -> topElements.put(n, e);
+                        case "complexType" -> complexTypes.put(ns + "|" + n, e);
+                        case "simpleType" -> simpleTypes.put(ns + "|" + n, e);
+                        case "group" -> groups.put(ns + "|" + n, e);
+                        case "element" -> topElements.put(ns + "|" + n, e);
                         default -> { }
                     }
                 }
@@ -205,6 +208,18 @@ public final class Schemas {
         return out;
     }
 
+    /** Finds a named definition, resolving the prefix of qname in the scope of the element that uses it. */
+    private static Element named(final Map<String, Element> defs, final Element user, final String qname) {
+        int i = qname.indexOf(':');
+        String ns = user.lookupNamespaceURI(i < 0 ? null : qname.substring(0, i));
+        if (ns == null) {
+            ns = user.getOwnerDocument().getDocumentElement().getAttribute("targetNamespace");
+        }
+        Element found = defs.get(ns + "|" + strip(qname));
+        // a schema with no targetNamespace is included into the namespace of whoever includes it
+        return found != null ? found : defs.get("|" + strip(qname));
+    }
+
     private static String strip(final String qname) {
         int i = qname.indexOf(':');
         return i < 0 ? qname : qname.substring(i + 1);
@@ -222,7 +237,7 @@ public final class Schemas {
     private Element typeOf(final Element decl) {
         String t = decl.getAttribute("type");
         if (!t.isEmpty()) {
-            return complexTypes.get(strip(t));
+            return named(complexTypes, decl, t);
         }
         List<Element> inline = children(decl, "complexType");
         return inline.isEmpty() ? null : inline.get(0);
@@ -234,7 +249,7 @@ public final class Schemas {
                 case "complexContent", "simpleContent" -> {
                     for (Element ext : children(c, null)) {
                         String base = strip(ext.getAttribute("base"));
-                        Element baseType = complexTypes.get(base);
+                        Element baseType = named(complexTypes, ext, ext.getAttribute("base"));
                         if (baseType != null) {
                             w.extendsChain.add(base);
                             walkType(baseType, w);
@@ -243,6 +258,7 @@ public final class Schemas {
                     }
                 }
                 case "sequence", "choice", "all" -> walkGroup(c, w, c.getLocalName().equals("choice"), "");
+                case "group" -> walkNamedGroup(c, w);
                 case "attribute" -> w.attributes.add(attribute(c));
                 default -> { }
             }
@@ -260,7 +276,19 @@ public final class Schemas {
                     w.elements.add(new Member(n, typeName(c), kind.isEmpty() ? "required" : kind));
                 }
                 case "sequence", "choice", "all" -> walkGroup(c, w, c.getLocalName().equals("choice"), outer);
+                case "group" -> walkNamedGroup(c, w);
                 default -> { }
+            }
+        }
+    }
+
+    private void walkNamedGroup(final Element ref, final Walk w) {
+        Element def = named(groups, ref, ref.getAttribute("ref"));
+        if (def != null) {
+            for (Element c : children(def, null)) {
+                if (List.of("sequence", "choice", "all").contains(c.getLocalName())) {
+                    walkGroup(c, w, c.getLocalName().equals("choice"), "");
+                }
             }
         }
     }
@@ -286,13 +314,13 @@ public final class Schemas {
                 + (def.isEmpty() ? "" : ", default " + def);
         String t = a.getAttribute("type");
         String type = t.isEmpty() ? describeSimple(children(a, "simpleType").stream().findFirst().orElse(null))
-                : describeSimpleName(strip(t));
+                : describeSimpleName(a, t);
         return new Member(a.getAttribute("name"), type, detail);
     }
 
-    private String describeSimpleName(final String name) {
-        Element st = simpleTypes.get(name);
-        return st == null ? name : describeSimple(st);
+    private String describeSimpleName(final Element user, final String qname) {
+        Element st = named(simpleTypes, user, qname);
+        return st == null ? strip(qname) : describeSimple(st);
     }
 
     private String describeSimple(final Element st) {
@@ -304,8 +332,7 @@ public final class Schemas {
         List<String> other = new ArrayList<>();
         String base = "string";
         for (Element r : children(st, "restriction")) {
-            String b = strip(r.getAttribute("base"));
-            base = simpleTypes.containsKey(b) ? describeSimpleName(b) : b;
+            base = describeSimpleName(r, r.getAttribute("base"));
             for (Element f : children(r, null)) {
                 switch (f.getLocalName()) {
                     case "enumeration" -> enums.add(f.getAttribute("value"));
@@ -338,7 +365,8 @@ public final class Schemas {
     public String describe(final String kind, final String path) {
         index();
         String rootName = rootFor(kind);
-        Element decl = topElements.get(rootName);
+        Element decl = topElements.entrySet().stream().filter(e -> e.getKey().endsWith("|" + rootName))
+                .map(Map.Entry::getValue).findFirst().orElse(null);
         if (decl == null) {
             throw new Tool.ToolError("Root element not found in schemas: " + rootName);
         }
@@ -388,9 +416,16 @@ public final class Schemas {
                         return c;
                     }
                 }
+                case "group" -> {
+                    Element def = named(groups, c, c.getAttribute("ref"));
+                    Element r = def == null ? null : findElementDecl(def, name);
+                    if (r != null) {
+                        return r;
+                    }
+                }
                 case "complexContent", "simpleContent", "extension", "sequence", "choice", "all" -> {
                     if (c.getLocalName().equals("extension")) {
-                        Element base = complexTypes.get(strip(c.getAttribute("base")));
+                        Element base = named(complexTypes, c, c.getAttribute("base"));
                         Element fromBase = base == null ? null : findElementDecl(base, name);
                         if (fromBase != null) {
                             return fromBase;
@@ -411,7 +446,7 @@ public final class Schemas {
         StringBuilder sb = new StringBuilder(shown);
         Element ct = typeOf(decl);
         if (ct == null) {
-            return sb.append("\ntype: ").append(describeSimpleName(strip(decl.getAttribute("type")))).toString();
+            return sb.append("\ntype: ").append(describeSimpleName(decl, decl.getAttribute("type"))).toString();
         }
         Walk w = new Walk();
         walkType(ct, w);

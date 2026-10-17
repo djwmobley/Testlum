@@ -24,6 +24,8 @@ class ToolsTest {
         String eq = s.describe("scenario", "assert/equal");
         assertTrue(eq.contains("minLength 10"), eq);
         assertTrue(s.describe("integration", "apis/api").contains("https?://"));
+        assertTrue(s.describe("scenario", "postgres").contains("file - required"), "same name in two namespaces");
+        assertTrue(s.describe("scenario", "var").contains("generate - choice"), "children from a named group");
         assertTrue(s.describe("global-config", "").contains("environments"));
         assertTrue(assertThrows(Tool.ToolError.class, () -> s.describe("scenario", "http/nope"))
                 .getMessage().contains("Children:"));
