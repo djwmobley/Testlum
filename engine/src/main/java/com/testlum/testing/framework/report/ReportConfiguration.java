@@ -18,6 +18,7 @@ import java.util.Objects;
 public class ReportConfiguration {
 
     private final ExtentReportsGenerator extentReportsGenerator;
+    private final JUnitReportGenerator junitReport;
     private final GlobalTestConfiguration globalTestConfiguration;
 
     @Primary
@@ -26,10 +27,20 @@ public class ReportConfiguration {
         Report report = globalTestConfiguration.getReport();
         if (report != null) {
             validateReport(report.getExtentReports());
-            return extentReportsGenerator;
+            return withJunit(report.getJunit());
         } else {
             throw new UnsupportedOperationException("Report generator type is not supported");
         }
+    }
+
+    private ReportGenerator withJunit(final JunitReport junit) {
+        if (junit == null || !junit.isEnabled()) {
+            return extentReportsGenerator;
+        }
+        return collector -> {
+            extentReportsGenerator.generateReport(collector);
+            junitReport.generateReport(collector);
+        };
     }
 
     private void validateReport(final ExtentReports extentReports) {
