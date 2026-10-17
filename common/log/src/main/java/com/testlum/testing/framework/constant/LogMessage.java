@@ -248,6 +248,8 @@ public final class LogMessage {
             scenarios rather than relying on this functionality."""
     );
 
+    public static final String UNABLE_TO_WRITE_JUNIT_REPORT = "Unable to write JUnit report to {}";
+
     private LogMessage() {
         // nop
     }
