@@ -63,7 +63,7 @@ def expect(cond, label, detail=""):
 init = rpc("initialize", {"protocolVersion": "2025-03-26"})
 expect(init["serverInfo"]["name"] == "testlum-mcp", "initialize")
 names = [t["name"] for t in rpc("tools/list")["tools"]]
-expect(names == ["testlum_lookup", "testlum_scaffold", "testlum_check", "testlum_run"], "tools/list", names)
+expect(names == ["testlum_lookup", "testlum_scaffold", "testlum_check", "testlum_run", "testlum_write_test", "testlum_generate_variations"], "tools/list", names)
 
 err, text = call("testlum_lookup")
 expect(not err and "http" in text and "assert" in text, "lookup lists scenario commands", text)

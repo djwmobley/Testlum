@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 
-/** The four tools: look up commands, scaffold a project, check tests, run tests. */
+/** The tools: look up commands, scaffold, check, run, write a test, generate variations. */
 public final class Tools {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -15,16 +15,18 @@ public final class Tools {
     private final Scaffolder scaffolder;
     private final Checker checker;
     private final Runner runner;
+    private final Writer writer;
 
     public Tools(final Schemas schemas, final String engineJar) {
         this.schemas = schemas;
         this.scaffolder = new Scaffolder(schemas);
         this.checker = new Checker(schemas);
         this.runner = new Runner(engineJar, checker);
+        this.writer = new Writer(schemas, checker);
     }
 
     public List<Tool> all() {
-        return List.of(lookup(), scaffold(), check(), run());
+        return List.of(lookup(), scaffold(), check(), run(), writeTest(), variations());
     }
 
     private Tool lookup() {
@@ -87,6 +89,37 @@ public final class Tools {
                         .add("timeoutSeconds", prop("integer", "Kill the engine after this long, default 600")), "dir"),
                 a -> runner.run(required(a, "dir"), text(a, "config", "global-config.xml"), text(a, "tags", ""),
                         a.path("expectedScenarios").asInt(-1), a.path("timeoutSeconds").asInt(600)));
+    }
+
+    private Tool writeTest() {
+        return new Tool("testlum_write_test",
+                "Write scenarios/<name>/scenario.xml plus its data files (request_1.json, expected_1.json and so on) "
+                        + "in one step. The scenario must pass the engine schema or nothing is written; the folder "
+                        + "check runs afterwards and a failing check rolls the write back.",
+                schema(props()
+                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("name", prop("string", "Scenario folder name"))
+                        .add("scenario", prop("string", "The full scenario.xml text"))
+                        .add("files", prop("object", "File name to content, written next to scenario.xml"))
+                        .add("overwrite", prop("boolean", "Replace an existing scenario of this name")),
+                        "dir", "name", "scenario"),
+                a -> writer.writeTest(required(a, "dir"), required(a, "name"), required(a, "scenario"),
+                        a.get("files"), a.path("overwrite").asBoolean(false)));
+    }
+
+    private Tool variations() {
+        return new Tool("testlum_generate_variations",
+                "Turn a table of values into engine variations: writes data/<csv>, one row per variation, and sets "
+                        + "settings/variations in the scenario, so it runs once per row. Reference columns as "
+                        + "{{column}} in the scenario and in file names such as expected_{{id}}.json.",
+                schema(props()
+                        .add("dir", prop("string", "Absolute path of the tests folder"))
+                        .add("name", prop("string", "Existing scenario folder name"))
+                        .add("csv", prop("string", "Data file name, for example users.csv"))
+                        .add("rows", prop("array", "Array of objects, one per variation, same keys in each")),
+                        "dir", "name", "csv", "rows"),
+                a -> writer.generateVariations(required(a, "dir"), required(a, "name"), required(a, "csv"),
+                        a.get("rows")));
     }
 
     // ---- small schema helpers ----

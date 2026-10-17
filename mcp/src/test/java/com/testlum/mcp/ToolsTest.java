@@ -96,4 +96,57 @@ class ToolsTest {
         Schemas s = new Schemas(null, jar.toString());
         assertTrue(s.describe("scenario", "http").contains("alias"));
     }
+
+    private static final String SCENARIO = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<scenario xmlns=\"http://www.testlum.com/testing/model/scenario\">\n"
+            + "<overview><description>Get one user back</description><name>t</name></overview>\n"
+            + "<settings><tags>smoke</tags></settings>\n"
+            + "<http comment=\"Get the user by id\"><get endpoint=\"/users/{{id}}\">"
+            + "<response code=\"200\" file=\"expected_{{id}}.json\"/></get></http>\n</scenario>\n";
+
+    private Writer writer() {
+        Schemas s = TestSupport.schemas();
+        new Scaffolder(s).scaffold(tmp.toString(), "sandbox", "demo", "DEFAULT", "http://localhost:1");
+        return new Writer(s, new Checker(s));
+    }
+
+    private static com.fasterxml.jackson.databind.JsonNode json(final String text) throws Exception {
+        return new com.fasterxml.jackson.databind.ObjectMapper().readTree(text);
+    }
+
+    @Test
+    void writeTestWritesFilesAndRefusesBadOrDuplicate() throws Exception {
+        Writer w = writer();
+        String ok = w.writeTest(tmp.toString(), "user", SCENARIO, json("{\"expected_1.json\":\"{}\"}"), false);
+        assertTrue(ok.contains("scenario.xml, expected_1.json") && ok.contains("PASS"), ok);
+        assertTrue(Files.exists(tmp.resolve("scenarios/user/expected_1.json")));
+        assertTrue(assertThrows(Tool.ToolError.class, () -> w.writeTest(tmp.toString(), "user", SCENARIO, null, false))
+                .getMessage().contains("already exists"));
+        String bad = SCENARIO.replace("endpoint=\"/users/{{id}}\"", "endpoint=\"users\"");
+        assertTrue(assertThrows(Tool.ToolError.class, () -> w.writeTest(tmp.toString(), "bad", bad, null, false))
+                .getMessage().contains("schema"));
+        assertTrue(Files.notExists(tmp.resolve("scenarios/bad")));
+    }
+
+    @Test
+    void writeTestRollsBackWhenTheCheckFails() {
+        Writer w = writer();
+        var e = assertThrows(Tool.ToolError.class,
+                () -> w.writeTest(tmp.toString(), "nofile", SCENARIO.replace("{{id}}", "9"), null, false));
+        assertTrue(e.getMessage().contains("Rolled back") && e.getMessage().contains("expected_9.json"), e.getMessage());
+        assertTrue(Files.notExists(tmp.resolve("scenarios/nofile")));
+    }
+
+    @Test
+    void variationsWriteTheCsvAndSetTheSetting() throws Exception {
+        Writer w = writer();
+        w.writeTest(tmp.toString(), "user", SCENARIO.replace("{{id}}", "1"), json("{\"expected_1.json\":\"{}\"}"), false);
+        String out = w.generateVariations(tmp.toString(), "user", "users.csv",
+                json("[{\"id\":\"1\",\"name\":\"Ana, B\"},{\"id\":\"2\",\"name\":\"Bob\"}]"));
+        assertTrue(out.contains("2 rows") && out.contains("PASS"), out);
+        assertEquals("id,name\n1,\"Ana, B\"\n2,Bob\n", Files.readString(tmp.resolve("data/users.csv")));
+        assertTrue(Files.readString(tmp.resolve("scenarios/user/scenario.xml")).contains("<variations>users.csv</variations>"));
+        assertTrue(assertThrows(Tool.ToolError.class, () -> w.generateVariations(tmp.toString(), "user", "u.csv",
+                json("[{\"id\":\"1\"},{\"x\":\"2\"}]"))).getMessage().contains("same columns"));
+    }
 }
