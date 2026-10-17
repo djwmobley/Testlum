@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -61,6 +62,12 @@ public class ExtentReportsConfigurator {
         } catch (Exception e) {
             log.error("Unable to create report file by path: {}", reportPath);
         }
+    }
+
+    /** The folder of today's reports: the report folder of the test resources plus the date. */
+    public Path reportFolder() {
+        return testResourceSettings.getTestResourcesFolder().toPath().resolve(TestResourceSettings.REPORT_FOLDER)
+                .resolve(LocalDateTime.now().format(DATE_FORMATTER));
     }
 
     private String buildReportPath(final String projectName) {
