@@ -451,6 +451,12 @@ public final class Schemas {
         return null;
     }
 
+    private static String documentation(final Element type) {
+        Element ann = Xml.child(type, "annotation");
+        Element doc = ann == null ? null : Xml.child(ann, "documentation");
+        return doc == null ? "" : doc.getTextContent().trim().replaceAll("\\s+", " ");
+    }
+
     private String render(final String shown, final Element decl) {
         StringBuilder sb = new StringBuilder(shown);
         Element ct = typeOf(decl);
@@ -461,6 +467,10 @@ public final class Schemas {
         walkType(ct, w);
         String t = typeName(decl);
         sb.append("\ntype: ").append(t);
+        String notes = documentation(ct);
+        if (!notes.isEmpty()) {
+            sb.append("\nnotes: ").append(notes);
+        }
         if (!w.extendsChain.isEmpty()) {
             sb.append(" (extends ").append(String.join(", ", w.extendsChain.stream().distinct().toList())).append(')');
         }

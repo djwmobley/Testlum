@@ -48,7 +48,7 @@ Inside the container `127.0.0.1` is the container itself. A stub running on the 
 
 ## Build
 
-    docker build -t testlum-mcp:0.3.0 mcp/          # image on the pinned engine image
+    docker build -t testlum-mcp:0.4.0 mcp/          # image on the pinned engine image
     mvn -f mcp/pom.xml package                      # jar, runs the unit tests
 
 Baked into the agent image instead of Docker: copy `testlum-mcp.jar` to `/opt/testlum-mcp/` and set `TESTLUM_ENGINE_JAR`; the shell launcher finds the jar there.

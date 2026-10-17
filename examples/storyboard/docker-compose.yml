@@ -17,18 +17,21 @@ services:
     build: ./site
     environment:
       DATABASE_URL: postgres://storyboard:storyboard@db:5432/storyboard
+      SB14: ${SB14:-}
     ports:
       - "18080:8080"
     depends_on:
       db:
         condition: service_healthy
   tests:
-    image: testlum-mcp:0.3.0
+    image: testlum-mcp:0.4.0
     build: ../../mcp
     profiles: [tests]
     entrypoint: ["java", "-jar", "/testlum/testlum-final.jar", "--config=global-config.xml", "--path=/tests"]
     environment:
       LC_ALL: C.UTF-8
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./tests:/tests
     depends_on:

@@ -64,8 +64,12 @@ async function route(req, res) {
 
   if (req.method === 'GET' && !id) {
     const status = url.searchParams.get('status');
+    const assignee = process.env.SB14 ? url.searchParams.get('assignee') : null;
     if (status && !STATUSES.includes(status)) return send(res, 400, { error: 'status must be todo, doing or done' });
-    const r = await pool.query(`select ${COLUMNS} from stories ${status ? 'where status = $1' : ''} order by id`, status ? [status] : []);
+    const where = [], args = [];
+    if (status) { args.push(status); where.push(`status = $${args.length}`); }
+    if (assignee) { args.push(assignee); where.push(`lower(assignee) = lower($${args.length})`); }
+    const r = await pool.query(`select ${COLUMNS} from stories ${where.length ? 'where ' + where.join(' and ') : ''} order by id`, args);
     return send(res, 200, r.rows);
   }
   if (req.method === 'GET') {

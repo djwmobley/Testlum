@@ -5,7 +5,7 @@ Point the MCP client config at this script. Never leave the container running.
   Start-TestlumMcp.ps1 [-TestsDir <folder>]   TestsDir is optional and defaults to $env:TESTLUM_WORKDIR, then the current folder; it is mounted at /work in the container
   Start-TestlumMcp.ps1 -Cleanup               remove any leftover testlum-mcp containers
 
-Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.3.0), TESTLUM_PASS_ENV (comma list of env var names to
+Env: TESTLUM_MCP_IMAGE (default testlum-mcp:0.4.0), TESTLUM_PASS_ENV (comma list of env var names to
 forward, no values here), TESTLUM_ENGINE_JAR_HOST (engine jar to mount instead of the image's),
 TESTLUM_MCP_IDLE_SECONDS (default 900), TESTLUM_MCP_JAR (server jar for the no-Docker path).
 Without a usable Docker it runs the jar as a plain stdio process.
@@ -16,7 +16,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$image = if ($env:TESTLUM_MCP_IMAGE) { $env:TESTLUM_MCP_IMAGE } else { 'testlum-mcp:0.3.0' }
+$image = if ($env:TESTLUM_MCP_IMAGE) { $env:TESTLUM_MCP_IMAGE } else { 'testlum-mcp:0.4.0' }
 function Say([string]$m) { [Console]::Error.WriteLine("testlum-mcp: $m") }
 
 $docker = Get-Command docker -ErrorAction SilentlyContinue

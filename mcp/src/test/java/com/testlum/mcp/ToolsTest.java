@@ -166,7 +166,8 @@ class ToolsTest {
         Files.writeString(sc.resolve("two/scenario.xml"), xml.formatted("<include scenario=\"one\"/>"));
         Tests t = new Tests();
         String list = t.list(tmp.toString());
-        assertTrue(list.contains("one | tags: ADO-7,api | variations: ids.csv"), list);
+        assertTrue(list.contains("one | tags: ADO-7,api | variations: ids.csv | runs: 1"), list);
+        assertTrue(list.contains("total runs 2, include-tagged 0. For testlum_run expectedScenarios use 2"), list);
         assertTrue(list.contains("GET /api/x/{{id}}"), list);
         assertTrue(assertThrows(Tool.ToolError.class, () -> t.delete(tmp.toString(), "one")).getMessage().contains("two includes"));
         assertTrue(t.delete(tmp.toString(), "two").startsWith("Deleted scenarios/two"));

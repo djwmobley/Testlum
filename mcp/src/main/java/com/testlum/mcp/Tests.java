@@ -21,23 +21,30 @@ final class Tests {
 
     /** What one scenario.xml holds that matters for upkeep. */
     private record Info(String name, String description, List<String> tags, boolean active, String csv,
-                        List<String> calls, List<String> includes) { }
+                        List<String> calls, List<String> includes, int runs) { }
 
     String list(final String dirArg) {
         Path root = Path.of(dirArg).toAbsolutePath().normalize();
         List<Info> all = read(root);
         StringBuilder sb = new StringBuilder(all.size() + " scenarios\n");
+        int runs = 0;
+        int includeRuns = 0;
         for (Info i : all) {
+            runs += i.runs();
+            includeRuns += i.tags().contains("include") ? i.runs() : 0;
             sb.append(i.name()).append(" | tags: ").append(String.join(",", i.tags()))
                     .append(i.active() ? "" : " | INACTIVE")
-                    .append(i.csv().isEmpty() ? "" : " | variations: " + i.csv()).append('\n');
+                    .append(i.csv().isEmpty() ? "" : " | variations: " + i.csv())
+                    .append(" | runs: ").append(i.runs()).append('\n');
             if (!i.description().isEmpty()) {
                 sb.append("  ").append(i.description()).append('\n');
             }
             i.calls().forEach(c -> sb.append("  ").append(c).append('\n'));
             i.includes().forEach(c -> sb.append("  include ").append(c).append('\n'));
         }
-        return sb.toString().stripTrailing();
+        sb.append("total runs ").append(runs).append(", include-tagged ").append(includeRuns)
+                .append(". For testlum_run expectedScenarios use ").append(runs - includeRuns);
+        return sb.toString();
     }
 
     String delete(final String dirArg, final String name) {
@@ -105,9 +112,25 @@ final class Tests {
             }
             boolean active = settings == null || !"false".equals(settings.getAttribute("active"));
             return new Info(name, text(Xml.child(top, "overview"), "description"), tagList, active,
-                    text(settings, "variations"), calls(top), includes(top));
+                    text(settings, "variations"), calls(top), includes(top), runs(file, active, text(settings, "variations")));
         } catch (Exception e) {
-            return new Info(name, "unreadable: " + e.getMessage(), List.of(), true, "", List.of(), List.of());
+            return new Info(name, "unreadable: " + e.getMessage(), List.of(), true, "", List.of(), List.of(), 1);
+        }
+    }
+
+    /** One run, or one per data row of the variations csv; an inactive scenario does not run. */
+    private static int runs(final Path scenario, final boolean active, final String csv) {
+        if (!active) {
+            return 0;
+        }
+        if (csv.isEmpty()) {
+            return 1;
+        }
+        Path data = scenario.getParent().getParent().getParent().resolve("data").resolve(csv);
+        try (Stream<String> lines = Files.lines(data)) {
+            return (int) lines.filter(l -> !l.isBlank()).count() - 1;
+        } catch (IOException e) {
+            return 1;
         }
     }
 
