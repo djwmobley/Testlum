@@ -1,0 +1,67 @@
+# Testlum MCP server
+
+An MCP server that helps agents write valid Testlum tests. It reads the engine's own XSD schemas, so it follows the engine and not the wiki. It has seven tools.
+
+| Tool | What it does |
+|---|---|
+| `testlum_lookup` | Lists the commands a scenario may hold. With a path such as `http/get` or `assert/equal` it returns that element's definition from the XSD: attributes, allowed values, patterns and child elements. `kind` can be `global-config` or `integration`. |
+| `testlum_scaffold` | Creates the folder layout the engine demands, with valid placeholders, and never overwrites a file. |
+| `testlum_check` | Validates the global config, each `integration.xml` and each `scenario.xml` against the XSDs and reports file, line and column. Files, aliases and includes are checked by the engine when it runs, so `testlum_run` has the final word. |
+| `testlum_run` | Runs the engine headless and returns the exit code, the scenario counts and a pass or fail line per run read from `report/junit.xml`, plus the full failure text. Run only some scenarios with `tags`. |
+| `testlum_write_test` | Writes a scenario and its data files in one step: `expected_1.json` and friends next to `scenario.xml`, `data/<name>.csv` in the data folder, which is where `<settings><variations>` reads from. The scenario must pass the schema or nothing is written. Refuses to replace an existing scenario or file unless `overwrite` is set. |
+| `testlum_list_tests` | Lists the scenarios in a tests folder: tags (ticket ids), variations file, description, every call as `VERB /endpoint`, every include. |
+| `testlum_delete_test` | Deletes a scenario and the scenarios under it. Refuses while a scenario outside them includes one, or while any scenario cannot be read. Removes its variations csv when nothing else uses it. |
+
+An argument a tool does not know is an error, not ignored.
+
+## Configuration
+
+- `TESTLUM_ENGINE_JAR`: path to the engine jar. `testlum_run` runs it.
+- `TESTLUM_XSD_DIR`: a folder of the engine's `schema/*.xsd`. The image sets both.
+- `TESTLUM_MCP_IDLE_SECONDS`: exit after this long with no traffic and no call running (default 900). The server also exits when the client closes stdin.
+
+The engine reads `--tags=a,b` (or `-t=a,b`) and then ignores the tag setting in the global config. It writes the JUnit report to `report/junit.xml` under the tests folder when the global config has `<junit enabled="true"/>` in `<report>`, which `testlum_scaffold` writes.
+
+## Docker
+
+Build the image once, from the repository root. The first build compiles the engine and takes a while.
+
+    docker build -f modules/mcp/Dockerfile -t testlum-mcp:0.5.0 .
+
+The client config points at a launcher, not at a running container. The launcher stops with a clear message if the image is missing, then runs `docker run -i --rm`. The container lives for one client session and is removed when it ends. It is labelled `app=testlum-mcp`.
+
+- Windows: `launch/Start-TestlumMcp.ps1 [-TestsDir <folder>]`
+- macOS and Linux: `launch/start-testlum-mcp.sh [tests-dir]`
+
+The tests folder is mounted at `/work`, so tool arguments use `/work/...` paths. With no argument the launchers use `TESTLUM_WORKDIR`, then the folder the MCP client starts them in, so one registration serves every project.
+
+MCP client config (Windows example):
+
+    { "command": "pwsh", "args": ["-NoProfile", "-File", "C:\\path\\to\\modules\\mcp\\launch\\Start-TestlumMcp.ps1"] }
+
+macOS or Linux:
+
+    { "command": "/path/to/modules/mcp/launch/start-testlum-mcp.sh" }
+
+Inside the container `127.0.0.1` is the container itself. A stub on the host must bind `0.0.0.0` and the tests must reach it at `host.docker.internal`. The launchers add the host mapping, so the name also works on Linux.
+
+## Build
+
+The server is a module of the Testlum reactor, off by default so a normal engine build is unchanged. The `mcp` profile adds it.
+
+    mvn -Pmcp -pl modules/mcp package
+
+That runs checkstyle and the unit tests. The module uses Spring like the engine does.
+
+## Demo
+
+`examples/storyboard` holds a small site, a Postgres database and a set of tests. From that folder, with Docker running:
+
+    docker compose run --build --rm tests
+
+See its README for what it shows and how to switch the sample bug on and off.
+
+## Tests
+
+- `mvn -Pmcp -pl modules/mcp test`: unit tests against the XSDs in this repo.
+- `python3 modules/mcp/e2e/e2e.py modules/mcp/target/testlum-mcp.jar <engine.jar>`: drives the server over stdio against a real engine and a local stub API.
