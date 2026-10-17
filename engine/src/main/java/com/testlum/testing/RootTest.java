@@ -7,6 +7,7 @@ import com.testlum.testing.framework.context.AliasToStorageOperation;
 import com.testlum.testing.framework.env.service.EnvironmentExecutionService;
 import com.testlum.testing.framework.exception.IntegrationDisabledException;
 import com.testlum.testing.framework.report.GlobalScenarioStatCollector;
+import com.testlum.testing.framework.report.JUnitXmlWriter;
 import com.testlum.testing.framework.report.ReportGenerator;
 import com.testlum.testing.framework.report.ScenarioResult;
 import com.testlum.testing.framework.scenario.InvalidScenarioCondition;
@@ -37,6 +38,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -136,8 +141,21 @@ public class RootTest {
         GlobalScenarioStatCollector globalScenarioStatCollector = ctx.getBean(GlobalScenarioStatCollector.class);
         ReportGenerator reportGenerator = ctx.getBean(ReportGenerator.class);
         reportGenerator.generateReport(globalScenarioStatCollector);
+        writeJUnitReport(globalScenarioStatCollector, skipped);
 
         logInvalidScenariosSummary(invalid);
+    }
+
+    private void writeJUnitReport(final GlobalScenarioStatCollector collector, final Map<String, String> skipped) {
+        Path file = ctx.getBean(TestResourceSettings.class).getTestResourcesFolder().toPath()
+                .resolve(TestResourceSettings.REPORT_FOLDER)
+                .resolve(LocalDate.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy")))
+                .resolve("junit.xml");
+        try {
+            JUnitXmlWriter.write(file, collector.getResults(), skipped);
+        } catch (IOException e) {
+            log.error("Unable to write JUnit report to {}", file, e);
+        }
     }
 
     private void logInvalidScenariosSummary(final Map<String, String> invalid) {
