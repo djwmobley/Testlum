@@ -13,10 +13,38 @@
                 <x:choice maxOccurs="unbounded">
                     <x:element name="equal" type="tns:assertEqual"/>
                     <x:element name="notEqual" type="tns:assertNotEqual"/>
+                    <x:element name="jsonPath" type="tns:assertJsonPath"/>
                 </x:choice>
             </x:extension>
         </x:complexContent>
     </x:complexType>
+
+    <x:complexType name="assertJsonPath">
+        <x:annotation>
+            <x:documentation>Checks one field of a JSON body: it exists, equals a value or matches a regex.
+                The body is the last HTTP response unless fromVar names a variable. With none of exists, equals
+                or matches, the field must exist. All given checks must hold.
+                A path with a filter or wildcard (indefinite) that matches nothing counts as not found, so
+                exists="false" on $[?(@.status!='done')] says no item has another status. Pair it with an
+                exists check on the positive filter, or an empty list passes that test without proving anything.
+                Example: path="$.items[?(@.assignee=='Ana')].title" matches="\[.*\]".</x:documentation>
+        </x:annotation>
+        <x:complexContent>
+            <x:extension base="tns:abstractCommand">
+                <x:attribute name="path" type="tns:jsonPathPattern" use="required"/>
+                <x:attribute name="fromVar" type="tns:nonEmptyString"/>
+                <x:attribute name="exists" type="x:boolean"/>
+                <x:attribute name="equals" type="x:string"/>
+                <x:attribute name="matches" type="tns:nonEmptyString"/>
+            </x:extension>
+        </x:complexContent>
+    </x:complexType>
+
+    <x:simpleType name="jsonPathPattern">
+        <x:restriction base="x:string">
+            <x:pattern value="\$.*"/>
+        </x:restriction>
+    </x:simpleType>
 
     <x:complexType name="assertEqual">
         <x:complexContent>
