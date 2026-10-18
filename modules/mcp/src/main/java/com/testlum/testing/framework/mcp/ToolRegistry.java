@@ -37,7 +37,9 @@ public final class ToolRegistry {
             "Validate a tests folder against the engine's XSDs without running it: global-config.xml, each "
                     + "integration.xml and each scenario.xml. Returns PASS or FAIL then one line per finding as "
                     + "file:line:column [level] message. Everything beyond syntax (files, aliases, includes) is "
-                    + "checked by the engine itself, so use testlum_run for the final word.";
+                    + "checked by the engine itself, so use testlum_run for the final word. The engine checks "
+                    + "the schema before it fills in ${NAME} from the environment, so a value that is only a "
+                    + "reference fails; write http://${HOST}:8080, not ${URL}.";
 
     private static final String LIST_TESTS_DOC =
             "List the scenarios in a tests folder: name, tags (ticket ids go here), active or not, the "

@@ -83,6 +83,35 @@ class EngineSchemasTest {
         assertTrue(check("").contains("Global config not found"), check(""));
     }
 
+    private void integrationUrl(final String url) throws IOException {
+        Files.writeString(tests.resolve("config/sandbox/integration.xml"),
+                "<integrations xmlns=\"http://www.testlum.com/testing/model/global-config\"><apis>"
+                        + "<api alias=\"DEFAULT\" enabled=\"true\" url=\"" + url + "\"/></apis></integrations>");
+    }
+
+    @Test
+    void aUrlThatIsOnlyAReferenceFailsAndSaysWhereToPutTheFixedPart() throws IOException {
+        integrationUrl("${TESTLUM_ENV_URL}");
+        String r = check("");
+        assertTrue(r.startsWith("FAIL: "), r);
+        assertTrue(r.contains("config/sandbox/integration.xml:"), r);
+        assertTrue(r.contains("The engine checks the schema before it fills in ${NAME}"), r);
+    }
+
+    @Test
+    void aReferenceAfterTheSchemeAndHostPasses() throws IOException {
+        integrationUrl("http://${HOST}:8080");
+        assertTrue(check("").startsWith("PASS: 0 problems in 0 scenarios"), check(""));
+    }
+
+    @Test
+    void aBadUrlWithoutAReferenceGetsNoHint() throws IOException {
+        integrationUrl("not a url");
+        String r = check("");
+        assertTrue(r.startsWith("FAIL: "), r);
+        assertFalse(r.contains("fills in ${NAME}"), r);
+    }
+
     @Test
     void refusesToWorkWithoutTheSchemaFolder() {
         assertTrue(assertThrows(ToolException.class, () -> new EngineSchemas("").dir())

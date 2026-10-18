@@ -29,6 +29,9 @@ public final class EngineSchemas {
     private static final String SCENARIO_XSD = "scenario.xsd";
     private static final Pattern NS_BRACES = Pattern.compile(
             "\\{http://www\\.testlum\\.com/[^}]*}|\"http://www\\.testlum\\.com/[^\"]*\":");
+    private static final Pattern ENV_REFERENCE = Pattern.compile("\\$\\{[^}]*}");
+    private static final String ENV_HINT = " The engine checks the schema before it fills in ${NAME}, so keep the fixed"
+            + " part outside the reference, for example http://${HOST}:8080.";
     private static final int MAX_ISSUES = 20;
 
     private final String xsdDir;
@@ -181,8 +184,9 @@ public final class EngineSchemas {
 
         private void add(final String level, final SAXParseException e) {
             if (issues.size() < MAX_ISSUES) {
+                String text = NS_BRACES.matcher(String.valueOf(e.getMessage())).replaceAll("");
                 issues.add(new Issue(shownName, e.getLineNumber(), e.getColumnNumber(), level,
-                        NS_BRACES.matcher(String.valueOf(e.getMessage())).replaceAll("")));
+                        ENV_REFERENCE.matcher(text).find() ? text + ENV_HINT : text));
             }
         }
     }
