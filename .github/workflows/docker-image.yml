@@ -1,6 +1,8 @@
 name: Docker Image Manual Build & Push
 
 on:
+  push:
+    branches: [ppp/ghcr-publish]
   workflow_dispatch:
     inputs:
       tag:
@@ -51,7 +53,7 @@ jobs:
             exit 1
           fi
 
-          TAG='${{ inputs.tag }}'
+          TAG='${{ inputs.tag || format('2.0.0-fork.{0}', github.sha) }}'
           [ -n "$TAG" ] || TAG="$POM_VERSION"
 
           # The tag names the release; it does not change what Maven builds.
